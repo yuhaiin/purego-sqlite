@@ -291,7 +291,27 @@ SQLite's other checkpoint modes); no Go hook API is claimed.
 
 ## Optional embedded SQLite
 
-System-only builds contain no native assets. To bundle, build the pinned
+For committed prebuilt binaries, use the companion
+[purego-sqlite-embed](https://github.com/yuhaiin/purego-sqlite-embed) module:
+
+```go
+import sqliteembed "github.com/yuhaiin/purego-sqlite-embed"
+
+library, err := sqliteembed.Path()
+if err != nil {
+    return err
+}
+connector, err := sqlite.NewConnector("file:app.db", sqlite.WithLibrary(library))
+```
+
+The companion embeds only the matching target library, verifies its hash and
+extracts it to a private directory. No runtime download or local SQLite build is
+required. See its platform table for libc, MIPS floating-point ABI, minimum OS
+versions and the `sqlite_musl` build tag. The driver's automatic CGO fallback still
+applies on MIPS and FreeBSD. The two modules remain independent; using the system
+library does not add the prebuilt assets to your dependency graph.
+
+To build your own assets inside the driver repository, build the pinned
 **official SQLite 3.54.1 amalgamation** on each target:
 
 ```sh
