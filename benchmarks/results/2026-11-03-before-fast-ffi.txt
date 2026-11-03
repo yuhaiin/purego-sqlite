@@ -1,0 +1,24 @@
+goos: linux
+goarch: amd64
+pkg: github.com/yuhaiin/purego-sqlite/benchmarks
+cpu: AMD Ryzen 5 5600G with Radeon Graphics         
+BenchmarkSQLite/SelectConstant/purego-12  	   30483	      7853 ns/op	    127343 ops/s	    1505 B/op	      74 allocs/op
+BenchmarkSQLite/SelectConstant/purego-12  	   30141	      8027 ns/op	    124578 ops/s	    1504 B/op	      74 allocs/op
+BenchmarkSQLite/SelectConstant/purego-12  	   29382	      8008 ns/op	    124874 ops/s	    1504 B/op	      74 allocs/op
+BenchmarkSQLite/SelectConstant/mattn-12   	   82920	      2806 ns/op	    356364 ops/s	     536 B/op	      14 allocs/op
+BenchmarkSQLite/SelectConstant/mattn-12   	   84331	      2793 ns/op	    358069 ops/s	     536 B/op	      14 allocs/op
+BenchmarkSQLite/SelectConstant/mattn-12   	   83467	      2806 ns/op	    356426 ops/s	     536 B/op	      14 allocs/op
+BenchmarkSQLite/PreparedInsert/purego-12  	   18747	     12668 ns/op	     78940 ops/s	     624 B/op	      39 allocs/op
+BenchmarkSQLite/PreparedInsert/purego-12  	   18873	     12677 ns/op	     78880 ops/s	     624 B/op	      39 allocs/op
+BenchmarkSQLite/PreparedInsert/purego-12  	   18700	     12675 ns/op	     78897 ops/s	     624 B/op	      39 allocs/op
+BenchmarkSQLite/PreparedInsert/mattn-12   	   26380	      9039 ns/op	    110628 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/mattn-12   	   25868	      9110 ns/op	    109765 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/mattn-12   	   26274	      9055 ns/op	    110436 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/FullScan1000/purego-12    	      66	   3358074 ns/op	       297.8 ops/s	      1000 rows/op	  605657 B/op	   39395 allocs/op
+BenchmarkSQLite/FullScan1000/purego-12    	      72	   3304426 ns/op	       302.6 ops/s	      1000 rows/op	  605678 B/op	   39395 allocs/op
+BenchmarkSQLite/FullScan1000/purego-12    	      73	   3329723 ns/op	       300.3 ops/s	      1000 rows/op	  605681 B/op	   39395 allocs/op
+BenchmarkSQLite/FullScan1000/mattn-12     	     369	    622889 ns/op	      1605 ops/s	      1000 rows/op	   82520 B/op	    7308 allocs/op
+BenchmarkSQLite/FullScan1000/mattn-12     	     391	    610662 ns/op	      1638 ops/s	      1000 rows/op	   82520 B/op	    7308 allocs/op
+BenchmarkSQLite/FullScan1000/mattn-12     	     386	    610113 ns/op	      1639 ops/s	      1000 rows/op	   82520 B/op	    7308 allocs/op
+PASS
+ok  	github.com/yuhaiin/purego-sqlite/benchmarks	4.344s

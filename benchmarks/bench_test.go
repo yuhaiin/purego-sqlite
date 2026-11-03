@@ -1,0 +1,374 @@
+package benchmarks
+
+import (
+	"bytes"
+	"context"
+	"database/sql"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"slices"
+	"strings"
+	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
+	sqlite "github.com/yuhaiin/purego-sqlite"
+)
+
+var drivers = []string{"purego", "mattn"}
+
+func open(b testing.TB, implementation, path string, connections int) *sql.DB {
+	b.Helper()
+	var db *sql.DB
+	if implementation == "purego" {
+		var opts []sqlite.Option
+		if lib := os.Getenv("BENCH_SQLITE_LIBRARY"); lib != "" {
+			opts = append(opts, sqlite.WithLibrary(lib))
+		}
+		opts = append(opts, sqlite.WithInit(func(ctx context.Context, c *sqlite.Conn) error {
+			for _, q := range []string{"PRAGMA synchronous=NORMAL", "PRAGMA cache_size=-2000", "PRAGMA busy_timeout=5000"} {
+				if _, err := c.ExecContext(ctx, q, nil); err != nil {
+					return err
+				}
+			}
+			return nil
+		}))
+		c, err := sqlite.NewConnector(path, opts...)
+		if err != nil {
+			b.Fatal(err)
+		}
+		db = sql.OpenDB(c)
+	} else {
+		// mattn applies these options to EVERY physical connection.
+		var err error
+		db, err = sql.Open("sqlite3", "file:"+filepath.ToSlash(path)+"?_synchronous=NORMAL&_cache_size=-2000&_busy_timeout=5000")
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	db.SetMaxOpenConns(connections)
+	db.SetMaxIdleConns(connections)
+	if err := db.Ping(); err != nil {
+		b.Fatal(err)
+	}
+	return db
+}
+func exec(b testing.TB, db *sql.DB, q string, args ...any) {
+	b.Helper()
+	if _, err := db.Exec(q, args...); err != nil {
+		b.Fatal(err)
+	}
+}
+func setup(b *testing.B, implementation string, connections int) *sql.DB {
+	b.Helper()
+	db := open(b, implementation, filepath.Join(b.TempDir(), "bench.db"), connections)
+	b.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			b.Error(err)
+		}
+	})
+	var journal string
+	if err := db.QueryRow("PRAGMA journal_mode=WAL").Scan(&journal); err != nil || journal != "wal" {
+		b.Fatal(journal, err)
+	}
+	exec(b, db, "CREATE TABLE items(id INTEGER PRIMARY KEY, name TEXT, value INTEGER)")
+	exec(b, db, "CREATE INDEX items_name ON items(name)")
+	exec(b, db, "CREATE TABLE events(id INTEGER PRIMARY KEY, value INTEGER)")
+	tx, err := db.Begin()
+	if err != nil {
+		b.Fatal(err)
+	}
+	s, err := tx.Prepare("INSERT INTO items VALUES(?,?,?)")
+	if err != nil {
+		b.Fatal(err)
+	}
+	for i := range 1000 {
+		if _, err := s.Exec(i, fmt.Sprintf("name-%04d", i), i); err != nil {
+			b.Fatal(err)
+		}
+	}
+	if err := s.Close(); err != nil {
+		b.Fatal(err)
+	}
+	if err := tx.Commit(); err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	return db
+}
+func throughput(b *testing.B) {
+	b.StopTimer()
+	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "ops/s")
+}
+
+func BenchmarkSQLite(b *testing.B) {
+	cases := []struct {
+		name string
+		run  func(*testing.B, string)
+	}{
+		{"OpenClose", benchOpenClose}, {"SelectConstant", benchConstant},
+		{"SingleInsert", benchInsert}, {"PreparedInsert", benchPreparedInsert},
+		{"BatchInsert1000", func(b *testing.B, d string) { benchBatch(b, d, 1000) }},
+		{"TransactionInsert100000", func(b *testing.B, d string) { benchBatch(b, d, 100000) }},
+		{"SingleRowSelect", benchSingleRow}, {"FullScan1000", benchScan}, {"IndexedLookup", benchIndexed},
+		{"LargeTextRead", func(b *testing.B, d string) { benchPayload(b, d, false, false) }},
+		{"LargeTextWrite", func(b *testing.B, d string) { benchPayload(b, d, false, true) }},
+		{"LargeBlobRead", func(b *testing.B, d string) { benchPayload(b, d, true, false) }},
+		{"LargeBlobWrite", func(b *testing.B, d string) { benchPayload(b, d, true, true) }},
+		{"WALReaders", benchReaders}, {"WALWriterContention", benchWriters},
+		{"FTS5Search", benchFTS5}, {"JSONQuery", benchJSON},
+	}
+	for _, c := range cases {
+		b.Run(c.name, func(b *testing.B) {
+			for _, d := range drivers {
+				b.Run(d, func(b *testing.B) { c.run(b, d) })
+			}
+		})
+	}
+}
+func benchOpenClose(b *testing.B, d string) {
+	path := filepath.Join(b.TempDir(), "open.db")
+	db := open(b, d, path, 1)
+	exec(b, db, "CREATE TABLE t(x)")
+	db.Close()
+	b.ReportAllocs()
+	for b.Loop() {
+		db := open(b, d, path, 1)
+		if err := db.Close(); err != nil {
+			b.Fatal(err)
+		}
+	}
+	throughput(b)
+}
+func benchConstant(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	for b.Loop() {
+		var n int
+		if err := db.QueryRow("SELECT 1").Scan(&n); err != nil || n != 1 {
+			b.Fatal(n, err)
+		}
+	}
+	throughput(b)
+}
+func benchInsert(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	for b.Loop() {
+		exec(b, db, "INSERT INTO events(value) VALUES(?)", 42)
+	}
+	throughput(b)
+}
+func benchPreparedInsert(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	s, err := db.Prepare("INSERT INTO events(value) VALUES(?)")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer s.Close()
+	for b.Loop() {
+		if _, err := s.Exec(42); err != nil {
+			b.Fatal(err)
+		}
+	}
+	throughput(b)
+}
+func benchBatch(b *testing.B, d string, n int) {
+	db := setup(b, d, 1)
+	for b.Loop() {
+		b.StopTimer()
+		exec(b, db, "DELETE FROM events")
+		b.StartTimer()
+		tx, err := db.Begin()
+		if err != nil {
+			b.Fatal(err)
+		}
+		s, err := tx.Prepare("INSERT INTO events(value) VALUES(?)")
+		if err != nil {
+			b.Fatal(err)
+		}
+		for i := range n {
+			if _, err := s.Exec(i); err != nil {
+				b.Fatal(err)
+			}
+		}
+		if err := s.Close(); err != nil {
+			b.Fatal(err)
+		}
+		if err := tx.Commit(); err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.ReportMetric(float64(n), "rows/op")
+	throughput(b)
+}
+func benchSingleRow(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	for b.Loop() {
+		var name string
+		var value int
+		if err := db.QueryRow("SELECT name,value FROM items WHERE id=?", 500).Scan(&name, &value); err != nil || value != 500 {
+			b.Fatal(value, err)
+		}
+	}
+	throughput(b)
+}
+func benchIndexed(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	for b.Loop() {
+		var id int
+		if err := db.QueryRow("SELECT id FROM items WHERE name=?", "name-0500").Scan(&id); err != nil || id != 500 {
+			b.Fatal(id, err)
+		}
+	}
+	throughput(b)
+}
+func benchScan(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	for b.Loop() {
+		rows, err := db.Query("SELECT id,name,value FROM items")
+		if err != nil {
+			b.Fatal(err)
+		}
+		count := 0
+		for rows.Next() {
+			var id, value int
+			var name string
+			if err := rows.Scan(&id, &name, &value); err != nil {
+				b.Fatal(err)
+			}
+			count++
+		}
+		if err := rows.Err(); err != nil {
+			b.Fatal(err)
+		}
+		rows.Close()
+		if count != 1000 {
+			b.Fatal(count)
+		}
+	}
+	b.ReportMetric(1000, "rows/op")
+	throughput(b)
+}
+func benchPayload(b *testing.B, d string, blob, write bool) {
+	db := setup(b, d, 1)
+	exec(b, db, "CREATE TABLE payload(id INTEGER PRIMARY KEY,value)")
+	data := bytes.Repeat([]byte("SQLite🌍\x00"), (1<<20)/len("SQLite🌍\x00"))
+	var value any = string(data)
+	if blob {
+		value = data
+	}
+	exec(b, db, "INSERT INTO payload VALUES(1,?)", value)
+	b.SetBytes(int64(len(data)))
+	if write {
+		s, err := db.Prepare("UPDATE payload SET value=? WHERE id=1")
+		if err != nil {
+			b.Fatal(err)
+		}
+		defer s.Close()
+		for b.Loop() {
+			if _, err := s.Exec(value); err != nil {
+				b.Fatal(err)
+			}
+		}
+	} else {
+		for b.Loop() {
+			if blob {
+				var v []byte
+				if err := db.QueryRow("SELECT value FROM payload WHERE id=1").Scan(&v); err != nil || len(v) != len(data) {
+					b.Fatal(len(v), err)
+				}
+			} else {
+				var v string
+				if err := db.QueryRow("SELECT value FROM payload WHERE id=1").Scan(&v); err != nil || len(v) != len(data) {
+					b.Fatal(len(v), err)
+				}
+			}
+		}
+	}
+	throughput(b)
+}
+func benchReaders(b *testing.B, d string) {
+	db := setup(b, d, 4)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			var value int
+			if err := db.QueryRow("SELECT value FROM items WHERE id=500").Scan(&value); err != nil || value != 500 {
+				b.Error(value, err)
+				return
+			}
+		}
+	})
+	throughput(b)
+}
+func benchWriters(b *testing.B, d string) {
+	db := setup(b, d, 4)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			if _, err := db.Exec("UPDATE items SET value=value+1 WHERE id=500"); err != nil {
+				b.Error(err)
+				return
+			}
+		}
+	})
+	throughput(b)
+}
+func benchFTS5(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	exec(b, db, "CREATE VIRTUAL TABLE documents USING fts5(body)")
+	exec(b, db, `INSERT INTO documents(body) SELECT 'native sqlite purego ' || name FROM items`)
+	for b.Loop() {
+		var n int
+		if err := db.QueryRow("SELECT count(*) FROM documents WHERE documents MATCH ?", "sqlite").Scan(&n); err != nil || n != 1000 {
+			b.Fatal(n, err)
+		}
+	}
+	throughput(b)
+}
+func benchJSON(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	for b.Loop() {
+		var n int
+		if err := db.QueryRow(`SELECT json_extract(?, '$.value')`, `{"value":42,"data":[1,2,3]}`).Scan(&n); err != nil || n != 42 {
+			b.Fatal(n, err)
+		}
+	}
+	throughput(b)
+}
+
+// Never compare two different SQLite engines/configurations by accident.
+func TestSameNativeSQLite(t *testing.T) {
+	var identity, options string
+	for _, d := range drivers {
+		db := open(t, d, filepath.Join(t.TempDir(), "identity.db"), 1)
+		var version, source string
+		if err := db.QueryRow("SELECT sqlite_version(),sqlite_source_id()").Scan(&version, &source); err != nil {
+			t.Fatal(err)
+		}
+		r, err := db.Query("PRAGMA compile_options")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var opts []string
+		for r.Next() {
+			var s string
+			if err := r.Scan(&s); err != nil {
+				t.Fatal(err)
+			}
+			opts = append(opts, s)
+		}
+		if err := r.Err(); err != nil {
+			t.Fatal(err)
+		}
+		r.Close()
+		slices.Sort(opts)
+		current := strings.Join(opts, ",")
+		if identity != "" && (identity != source || options != current) {
+			t.Fatal("SQLite source/options differ; run with -tags libsqlite3 and the same shared library")
+		}
+		identity, options = source, current
+		t.Logf("driver=%s Go=%s SQLite=%s source=%s compile_options=%s", d, runtime.Version(), version, source, current)
+		db.Close()
+	}
+}
