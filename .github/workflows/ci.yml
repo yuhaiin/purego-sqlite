@@ -26,6 +26,18 @@ jobs:
           CGO_ENABLED: '0'
       - name: Verify production dependency graph has no CgoFiles
         run: test -z "$(CGO_ENABLED=0 go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
+      - name: Verify backend build-tag selection
+        run: |
+          python3 scripts/check-backends.py
+          CGO_ENABLED=0 go test -tags sqlite_cgo ./internal/loader
+      - name: Verify generated CGO bridges
+        run: |
+          python3 scripts/generate-cgo.py
+          git diff --exit-code
+      - name: CGO static analysis
+        run: |
+          CGO_ENABLED=1 go vet -tags sqlite_cgo ./...
+          CGO_ENABLED=1 go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags sqlite_cgo ./...
       - name: Minimum Go version
         run: GOTOOLCHAIN=go1.26.0 CGO_ENABLED=0 go test ./...
 
@@ -89,6 +101,12 @@ jobs:
         env:
           CGO_ENABLED: '1'
         run: go test -race -timeout 3m ./...
+      - name: CGO backend and strict pointer checks
+        if: matrix.race
+        env:
+          CGO_ENABLED: '1'
+          GOEXPERIMENT: cgocheck2
+        run: go test -tags sqlite_cgo -race -timeout 3m ./...
       - name: Embedded library with CGO disabled
         env:
           SQLITE_TEST_BUNDLED: '1'
@@ -121,3 +139,45 @@ jobs:
           path: |
             benchmarks/results/local-*
             .native/manifest.json
+
+  mipsle:
+    name: CGO Linux mipsle (QEMU)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.27.3'
+      - run: sudo apt-get update && sudo apt-get install -y gcc-mipsel-linux-gnu libc6-dev-mipsel-cross qemu-user
+      - run: scripts/test-mipsle.sh
+
+  freebsd:
+    name: CGO FreeBSD amd64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Start FreeBSD VM
+        uses: cross-platform-actions/action@82668f1fbd89d9c99487604f822cbf6716f124d3 # v1.7.0
+        with:
+          operating_system: freebsd
+          version: '14.3'
+      - name: Native CGO, features, extensions, race and embedded library
+        shell: cpa.sh {0}
+        run: |
+          set -eu
+          sudo pkg install -y python311 ca_root_nss sqlite3
+          fetch -o /tmp/sqlite-test-go.tar.gz https://go.dev/dl/go1.27.3.freebsd-amd64.tar.gz
+          test "$(sha256 -q /tmp/sqlite-test-go.tar.gz)" = c15c88d07d6b2d2db5df7b65d9b9c73d631ac4e787da04e2bef2a5b6952c2cbb
+          tar -C /tmp -xzf /tmp/sqlite-test-go.tar.gz
+          export PATH="/tmp/go/bin:$PATH"
+          export CGO_ENABLED=1
+          go test -timeout 3m ./...
+          python3.11 scripts/build-native.py --embed
+          export SQLITE_TEST_LIBRARY="$PWD/.native/libsqlite3.so"
+          export SQLITE_TEST_EXTENSION="$PWD/.native/test_extension.so"
+          export SQLITE_REQUIRE_FEATURES=1
+          go test -race -timeout 3m ./...
+          go vet ./...
+          SQLITE_TEST_LIBRARY='' SQLITE_TEST_BUNDLED=1 go test -tags sqlite_bundle -timeout 3m ./...

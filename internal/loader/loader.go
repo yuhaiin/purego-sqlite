@@ -10,8 +10,8 @@ import (
 )
 
 func Open(path string) (uintptr, string, error) {
-	if (runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64") || (runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "windows") {
-		return 0, "", fmt.Errorf("sqlite: unsupported platform %s/%s", runtime.GOOS, runtime.GOARCH)
+	if !backendAvailable {
+		return 0, "", fmt.Errorf("sqlite: no FFI backend for %s/%s; non-PureGo targets require CGO_ENABLED=1 and a supported C toolchain", runtime.GOOS, runtime.GOARCH)
 	}
 	paths := systemPaths()
 	if path != "" {

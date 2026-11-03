@@ -1,8 +1,9 @@
 # purego-sqlite
 
 A `database/sql` driver for the **official native SQLite engine**, called through
-[PureGo](https://github.com/ebitengine/purego). The driver builds with
-`CGO_ENABLED=0`; SQLite still runs as a native shared library. This is an original
+[PureGo](https://github.com/ebitengine/purego) on the six primary desktop/server
+targets, with a **CGO fallback** on other supported targets. The primary targets
+build with `CGO_ENABLED=0`; SQLite still runs as a native shared library. This is an original
 implementation, not a fork of mattn/go-sqlite3 or a Go/WASM SQLite engine.
 
 Requires **Go 1.26+**, PureGo **v0.11.3**, and a thread-safe SQLite **3.20.0+**.
@@ -45,15 +46,69 @@ The driver is registered as `sqlite3purego`, so it can coexist with mattn's
 ## Platforms and native installation
 
 The runtime CI matrix covers Linux, macOS and Windows, each on amd64 and arm64.
-Cross-compiling the Go code requires no C compiler. Running it requires a SQLite
-library matching the process architecture. Other targets return an explicit
-unsupported-platform error.
+Cross-compiling those six PureGo targets requires no C compiler. Running the
+driver always requires a SQLite library matching the process architecture.
+Other Linux architectures and BSD targets select CGO as described below.
 
 | Platform | Default library selection | Installation / explicit alternative |
 |---|---|---|
 | Linux amd64/arm64 | Fixed absolute `/usr/lib`, `/lib`, multiarch and `lib64` paths for `libsqlite3.so.0` | Debian/Ubuntu: `libsqlite3-0`; Fedora: `sqlite-libs`; Arch: `sqlite` |
 | macOS amd64/arm64 | `/usr/lib/libsqlite3.dylib` (including dyld shared cache) | System SQLite, or absolute Homebrew/custom path |
 | Windows amd64/arm64 | No implicit DLL search | Build SQLite with the supplied script, then use `WithLibrary`, or embed it |
+
+### Automatic CGO fallback
+
+Backend selection happens at **build time**, without changing imports, driver
+name, connectors or database/sql behavior:
+
+| Targets | Default backend | Build requirement |
+|---|---|---|
+| Linux/macOS/Windows amd64 and arm64 | PureGo | `CGO_ENABLED=0` works |
+| Linux mipsle, mips, mips64(le), 386, arm, ppc64(le), riscv64, s390x, loong64 | CGO | `CGO_ENABLED=1`, matching C compiler and libc |
+| FreeBSD, OpenBSD, NetBSD, DragonFly BSD (Go/CGO-supported architectures) | CGO | `CGO_ENABLED=1`, native or cross C toolchain |
+| Other Windows Go/CGO targets | CGO | Matching Windows C toolchain; not covered by runtime CI |
+| Other OS targets | Unavailable | Connector returns an explicit unsupported-backend error |
+
+FreeBSD and NetBSD have experimental support upstream in PureGo; this driver
+conservatively defaults to CGO there. FreeBSD amd64 has native VM CI, and Linux
+mipsle has QEMU runtime CI, including native features, extensions and embedded
+libraries. Other fallback combinations are implemented but not claimed as
+runtime-validated. On a fallback target, `CGO_ENABLED=0` produces an actionable
+connector error instead of trying an incompatible FFI ABI.
+
+The fallback consists of C trampolines around the **same runtime-loaded SQLite
+C API**. It does not delegate to mattn or include another SQLite engine. Only the
+C compiler and target libc/dynamic loader are required at Go build time; SQLite
+development headers and a link-time `-lsqlite3` dependency are not needed. The
+existing explicit-library and embedded-library options still work. The compiler
+handles 32-bit pointers, 64-bit INTEGERs, doubles, destructors and C varargs.
+
+On FreeBSD, install the runtime library (for example, `pkg install sqlite3`) and
+build normally with CGO enabled:
+
+```sh
+CGO_ENABLED=1 go build ./...
+```
+
+Cross-compiling Linux mipsle with a matching hard-float toolchain:
+
+```sh
+CGO_ENABLED=1 GOOS=linux GOARCH=mipsle GOMIPS=hardfloat \
+  CC=mipsel-linux-gnu-gcc go build ./...
+```
+
+Deploy a matching **mipsle** SQLite shared library and libc on the device. For a
+soft-float/musl router, use that device's SDK/compiler and matching `GOMIPS` and C
+compiler flags; do not copy a hard-float/glibc library onto it. Cross-compiling
+CGO requires the target C toolchain/sysroot even though PureGo cross-builds do not.
+
+An explicit `-tags sqlite_cgo` selects CGO on a primary target too, for backend
+testing or where the compiler's ABI handling is desired (including secure
+extensions on Apple arm64). It requires `CGO_ENABLED=1`:
+
+```sh
+CGO_ENABLED=1 go test -tags sqlite_cgo ./...
+```
 
 Library precedence is deterministic: **explicit `WithLibrary` > requested
 `WithBundled` > system**. An explicitly selected library never silently falls
@@ -166,7 +221,7 @@ Unknown feature names return `ErrUnsupported`.
 | JSONB | SQLite 3.45+ with JSON | Yes; runtime probe |
 | RTree / Geopoly / DBSTAT / math | Corresponding compile options | Yes; runtime probe |
 | Window functions / UPSERT / generated columns / RETURNING / STRICT | SQLite 3.25 / 3.24 / 3.31 / 3.35 / 3.37+ respectively | Native SQL |
-| Trusted extension loading | Load-extension symbols and supported secure ABI | Opt-in; unavailable on Apple arm64 |
+| Trusted extension loading | Load-extension symbols and supported secure ABI | Opt-in; Apple arm64 requires the CGO backend |
 | Custom Go SQL functions, collations, hooks, FTS5 tokenizers | Audited native-to-Go callback lifetimes and ABIs | Not implemented |
 | Session/changesets, incremental BLOB I/O, serialization | Additional native APIs | Not implemented |
 
@@ -213,7 +268,9 @@ request permanent loading follow SQLite's own semantics).
 `SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION` call on Linux amd64/arm64, Windows
 amd64/arm64 and macOS amd64. It is **not** a general variadic binding. Apple arm64
 passes unnamed arguments differently; `WithExtensions` returns `ErrUnsupported`
-there rather than enabling SQL loading as a fallback. Native extensions can
+on the default PureGo backend rather than enabling SQL loading as a fallback.
+The optional `sqlite_cgo` backend uses a C variadic trampoline and supports this
+operation on Apple arm64 as well. Native extensions can
 register functions/tokenizers; Go callback APIs remain deferred pending separate
 ABI, panic, reentrancy, foreign-thread and callback-lifetime validation.
 
@@ -250,8 +307,10 @@ published SHA3-256 before compiling. Generated platform-specific embed files and
 assets are ignored by Git; CI uploads them with a compiler/flags/source/hash
 manifest. These are locally generated assets, not downloaded executable binaries.
 Copy the matching generated source and assets into your build tree to reuse a CI
-artifact. Build each OS/architecture on its corresponding runner; the script
-does not promise cross-compilation or bit-identical outputs across C toolchains.
+artifact. By default the script selects `go env GOOS/GOARCH`. Cross builds use `CC` plus
+`--goos`, `--goarch` and `--output` to select matching assets, as demonstrated by
+`scripts/test-mipsle.sh`. The script does not supply a cross toolchain/sysroot or
+promise bit-identical outputs across C toolchains.
 
 At runtime, the embedded SHA-256 is verified before extraction to a unique
 private temporary directory (0700, library file 0500). Extraction is synchronized
@@ -281,14 +340,17 @@ CGO_ENABLED=1 go test -race ./...
 
 Adjust filenames for macOS/Windows. Go's race detector requires `CGO_ENABLED=1`;
 `CGO_ENABLED=0 go test -race` is rejected by Go itself. Enabling CGO for that test
-runtime does not introduce CGO into production driver sources. Race testing is
+runtime does not select the fallback on primary targets unless `-tags sqlite_cgo` is
+also supplied. Race testing is
 supplementary: it cannot prove native memory safety.
 
 CI checks formatting, vet, pinned staticcheck, the minimum Go version, the
 CGO-free dependency graph, file-backed integration tests, native capabilities,
 locally compiled extensions, embedded integrity and benchmark smoke tests.
-Native jobs use all six OS/architecture combinations; race jobs cover Linux and
-macOS. Optional system features may skip when absent; bundled feature jobs require
+Native jobs use all six primary OS/architecture combinations; race jobs cover
+Linux and macOS. The CGO backend also runs under strict `cgocheck2` and race checks
+on those Unix runners. Additional jobs run automatic fallback on FreeBSD amd64
+and Linux mipsle/QEMU (`scripts/test-mipsle.sh`). Optional system features may skip when absent; bundled feature jobs require
 FTS5, JSON/JSONB and RTree. Apple arm64's secure extension limitation is reported
 separately. Tests cover repeated cancellation/reuse, lifecycle races, connection
 churn, empty/NUL/large bindings, metadata changes, transaction error recovery,
@@ -305,8 +367,8 @@ scripts/benchmark.sh                  # Linux: 200ms samples, five repetitions
 scripts/benchmark.sh -benchtime=1x -count=1  # smoke only
 ```
 
-The comparison lives in its **own Go module**; mattn and CGO are benchmark-only
-dependencies. Both drivers use exactly the same built native SQLite library,
+The comparison lives in its **own Go module**; mattn is a benchmark-only
+dependency, and CGO is used by mattn and by explicitly selected fallback builds. Both drivers use exactly the same built native SQLite library,
 verified by source ID and compile-option equality. Results are workload- and
 machine-specific, and memory/storage-heavy work must be tested on deployment
 hardware. Reusing statements avoids prepare overhead. Integer-only hot FFI calls
@@ -314,7 +376,8 @@ use PureGo's documented SyscallN API; floating point and native pointer conversi
 retain typed ABI bindings. No SQLite-owned buffer is cached beyond its lifetime.
 
 Compared with mattn, this driver removes the application's CGO build requirement
-but still requires native-library deployment. mattn has a much longer production
+on the six primary PureGo targets but still requires native-library deployment.
+Fallback targets require CGO. mattn has a much longer production
 history and a broader Go callback API. Performance parity and universal feature
 parity are not claimed. Compared with pure-Go/WASM engines, this driver uses the
 official native engine and its native extension ecosystem.
@@ -328,7 +391,8 @@ a cross-target binary alone does not validate its runtime ABI.
 
 Go callbacks, custom Go FTS5 tokenizers, hook APIs, session/changesets,
 serialization and incremental BLOB APIs remain future work. Secure runtime
-extensions are unavailable on Apple arm64. Embedded assets require a separate
+extensions are unavailable on Apple arm64's default PureGo backend; use
+`-tags sqlite_cgo` with CGO enabled when needed. Embedded assets require a separate
 native build step and process-lifetime temp cleanup as described above. Busy
 waits and extension work may delay cancellation. There is no statement cache,
 no multi-result/multi-statement execution, no automatic date conversion and no
