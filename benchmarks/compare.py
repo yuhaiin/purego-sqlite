@@ -7,24 +7,26 @@ from collections import defaultdict
 
 results = defaultdict(lambda: defaultdict(list))
 for line in open(sys.argv[1]):
-    match = re.match(r"BenchmarkSQLite/([^/]+)/(purego|mattn)-\d+\s+\d+\s+(.*)", line)
+    match = re.match(r"BenchmarkSQLite/([^/]+)/(purego|cgo|mattn)-\d+\s+\d+\s+(.*)", line)
     if not match:
         continue
     name, driver, raw = match.groups()
     metrics = dict((unit, float(value)) for value, unit in re.findall(r"([\d.]+)\s+(ns/op|B/op|allocs/op|ops/s)", raw))
     results[name][driver].append(metrics)
 
-print("Medians of repeated samples. Ratio = PureGo time / mattn time (lower is better).")
+backend = next((name for group in results.values() for name in group if name != "mattn"), "purego")
+label = "CGO" if backend == "cgo" else "PureGo"
+print(f"Medians of repeated samples. Ratio = {label} time / mattn time (lower is better).")
 print()
-print("| Workload | PureGo ns/op | mattn ns/op | Ratio | PureGo B/op | mattn B/op | PureGo allocs/op | mattn allocs/op | PureGo ops/s | mattn ops/s |")
+print(f"| Workload | {label} ns/op | mattn ns/op | Ratio | {label} B/op | mattn B/op | {label} allocs/op | mattn allocs/op | {label} ops/s | mattn ops/s |")
 print("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
 for name, implementations in results.items():
     def med(driver, metric):
         return statistics.median(row[metric] for row in implementations[driver])
-    p, m = med("purego", "ns/op"), med("mattn", "ns/op")
+    p, m = med(backend, "ns/op"), med("mattn", "ns/op")
     values = [f"{p:,.0f}", f"{m:,.0f}", f"{p/m:.2f}x"]
     for metric in ("B/op", "allocs/op", "ops/s"):
-        values.extend(f"{med(driver,metric):,.0f}" for driver in ("purego", "mattn"))
+        values.extend(f"{med(driver,metric):,.0f}" for driver in (backend, "mattn"))
     print("| " + name + " | " + " | ".join(values) + " |")
 if not results:
     raise SystemExit("no benchmark data")

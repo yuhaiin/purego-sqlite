@@ -1,8 +1,43 @@
 # Same-library mattn benchmark
 
-This directory is a separate Go module so `mattn/go-sqlite3` and CGO are never
-production dependencies of the driver. The pinned comparison is mattn v1.14.52
+This directory is a separate Go module so `mattn/go-sqlite3` remains a benchmark-only dependency. CGO is the default
+production backend when enabled; PureGo remains CGO-free. The pinned comparison is mattn v1.14.52
 versus PureGo v0.11.3 with the driver implementation at `e547a78`.
+
+## Default CGO and current PureGo measurements (2026-11-04)
+
+The driver now selects CGO when enabled and links checksum-verified official
+SQLite 3.54.1 into the executable by default. PureGo is selected when CGO is
+disabled, or with `sqlite_purego` for a benchmark that must also build mattn.
+
+```sh
+BENCH_BACKEND=cgo scripts/benchmark.sh     # linked engine vs mattn
+BENCH_BACKEND=purego scripts/benchmark.sh # shared engine vs mattn
+BENCH_BACKEND=cgo-dynamic scripts/benchmark.sh # optional dynamic CGO comparison
+```
+
+The linked comparison builds mattn with `libsqlite3` (its bundled engine is
+excluded). Both drivers resolve to the executable's linked SQLite symbols;
+`TestSameNativeSQLite` verifies identical source IDs and all compile options.
+The PureGo comparison loads the same shared binary as mattn. Using mattn's own
+bundled amalgamation would cause conflicting SQLite symbols and compare different
+engines; always use the script and its `libsqlite3` tag.
+
+[CGO full results](results/2026-11-04-cgo-linux-amd64.md),
+[CGO raw samples](results/2026-11-04-cgo-linux-amd64.txt),
+[PureGo full results](results/2026-11-04-purego-linux-amd64.md), and
+[PureGo raw samples](results/2026-11-04-purego-linux-amd64.txt) contain 17 workloads,
+five 200ms samples per driver, including ns/op, allocations, bytes and throughput.
+Environment and workload controls are the same as described below: Ryzen 5 5600G,
+Linux amd64, Go 1.27.3, GCC 16.2.1, GOMAXPROCS=4, tmpfs databases, WAL/NORMAL.
+Runs were sequential; the results have no confidence intervals or CPU pinning.
+
+CGO reduces much of the typed PureGo reflection/string conversion overhead.
+Against mattn, observed CGO medians include constant SELECT 0.94x, single-row
+SELECT 0.99x, indexed lookup 0.98x, JSON 1.00x and FTS5 1.01x. Batch writes
+remain about 1.20x and 1000-row scans about 1.26x mattn time. These are measured
+workload-specific results, not a claim that CGO wins every case. See the complete
+tables for large values and contention workloads.
 
 ## Reproduce (Linux)
 

@@ -1,5 +1,6 @@
 // Package sqlite is a database/sql driver for the official native SQLite engine.
-// Supported desktop targets use PureGo; other targets use a CGO fallback.
+// CGO builds use the linked official SQLite engine by default; CGO-disabled
+// builds use PureGo to load a native SQLite shared library.
 // It registers the driver name "sqlite3purego".
 package sqlite
 

@@ -4,3 +4,5 @@ internal/native/assets/
 *.test
 *.test.exe
 benchmarks/results/local-*
+
+__pycache__/

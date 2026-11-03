@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: driver-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
@@ -33,6 +36,7 @@ jobs:
       - name: Verify generated CGO bridges
         run: |
           python3 scripts/generate-cgo.py
+          python3 scripts/vendor-sqlite.py
           git diff --exit-code
       - name: CGO static analysis
         run: |
@@ -107,6 +111,28 @@ jobs:
           CGO_ENABLED: '1'
           GOEXPERIMENT: cgocheck2
         run: go test -tags sqlite_cgo -race -timeout 3m ./...
+      - name: Default linked CGO engine
+        if: matrix.race
+        env:
+          CGO_ENABLED: '1'
+          SQLITE_TEST_LIBRARY: ''
+        run: go test -race -timeout 3m ./...
+      - name: Install Windows CGO compiler
+        if: runner.os == 'Windows'
+        run: python3 scripts/install-zig-windows.py
+      - name: Windows CGO linked engine and explicit DLL
+        if: runner.os == 'Windows'
+        env:
+          CGO_ENABLED: '1'
+          GOEXPERIMENT: cgocheck2
+        run: |
+          if [ "${{ matrix.arch }}" = arm64 ]; then
+            export CC='zig cc -target aarch64-windows-gnu'
+          else
+            export CC='zig cc -target x86_64-windows-gnu'
+          fi
+          go test -timeout 3m ./...
+          SQLITE_TEST_LIBRARY='' go test -timeout 3m ./...
       - name: Embedded library with CGO disabled
         env:
           SQLITE_TEST_BUNDLED: '1'
@@ -130,8 +156,12 @@ jobs:
           go-version: '1.27.3'
           cache-dependency-path: benchmarks/go.sum
       - run: python3 scripts/build-native.py
-      - name: Same-library mattn comparison smoke test
-        run: scripts/benchmark.sh -benchtime=1x -count=1
+      - name: Same-engine PureGo and CGO mattn comparisons
+        run: |
+          scripts/benchmark.sh -benchtime=1x -count=1
+          cp benchmarks/results/local-raw.txt benchmarks/results/local-purego.txt
+          BENCH_BACKEND=cgo scripts/benchmark.sh -benchtime=1x -count=1
+          cp benchmarks/results/local-raw.txt benchmarks/results/local-cgo.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -153,7 +183,7 @@ jobs:
       - run: scripts/test-mipsle.sh
 
   freebsd:
-    name: CGO FreeBSD amd64
+    name: CGO and PureGo FreeBSD amd64
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -180,4 +210,25 @@ jobs:
           export SQLITE_REQUIRE_FEATURES=1
           go test -race -timeout 3m ./...
           go vet ./...
+          CGO_ENABLED=0 go test -gcflags=github.com/ebitengine/purego/internal/fakecgo=-std -timeout 3m ./...
           SQLITE_TEST_LIBRARY='' SQLITE_TEST_BUNDLED=1 go test -tags sqlite_bundle -timeout 3m ./...
+
+  alpine-static:
+    name: Static CGO Alpine (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build and run a fully static musl executable
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src alpine:3.23 sh -ec '
+            apk add --no-cache go gcc musl-dev binutils ripgrep bash
+            export GOTOOLCHAIN=go1.27.3 CC=gcc
+            bash scripts/test-static.sh
+          '
+      - name: Run without any libc, loader or SQLite installation
+        run: docker run --rm --network none --tmpfs /tmp:exec,mode=1777 -e SQLITE_REQUIRE_FEATURES=1 -v "$PWD/.native/static/driver.test:/driver.test:ro" scratch /driver.test -test.v -test.timeout=3m

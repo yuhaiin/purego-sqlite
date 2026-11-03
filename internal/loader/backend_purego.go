@@ -1,4 +1,4 @@
-//go:build (linux || darwin || windows) && (amd64 || arm64) && !sqlite_cgo
+//go:build (linux || darwin || windows || freebsd || netbsd) && (amd64 || arm64) && (!cgo || sqlite_purego) && !sqlite_cgo
 
 package loader
 
