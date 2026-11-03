@@ -99,6 +99,7 @@ func Load(path string) (*API, error) {
 		_ = loader.Close(h)
 		return nil, fmt.Errorf("sqlite: need SQLite >= 3.20.0 with THREADSAFE enabled (loaded %s)", version)
 	}
+	bindFast(a, h)
 	a.ConfigExtension = extensionConfig(h)
 	libraries.apis[path] = a
 	return a, nil

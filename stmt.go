@@ -51,9 +51,6 @@ func (c *Conn) prepareLocked(query string) (*stmt, error) {
 	for i := range s.names {
 		s.names[i] = c.api.BindParameterName(ptr, int32(i+1))
 	}
-	// Column metadata may change after SQLite automatically recompiles on step;
-	// rows refresh it after the first step (and Columns before stepping is advisory).
-	s.refreshColumns()
 	c.stmts[s] = struct{}{}
 	return s, nil
 }
@@ -159,11 +156,8 @@ func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 }
 
 func (s *stmt) bindLocked(args []driver.NamedValue) error {
-	a := s.c.api
-	a.Reset(s.ptr) // Previous step errors were already delivered to the caller.
-	if rc := a.ClearBindings(s.ptr); rc != ffi.OK {
-		return s.c.sqliteError(rc)
-	}
+	// Every execution/rows close resets and clears bindings, including failures.
+	// A newly prepared statement starts clear. Do not duplicate those native calls.
 	bound := make([]bool, len(s.names))
 	for _, v := range args {
 		found := false
