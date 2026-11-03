@@ -104,7 +104,7 @@ jobs:
         if: matrix.race
         env:
           CGO_ENABLED: '1'
-        run: go test -race -timeout 3m ./...
+        run: go test -race -tags sqlite_purego -timeout 3m ./...
       - name: CGO backend and strict pointer checks
         if: matrix.race
         env:
@@ -231,4 +231,10 @@ jobs:
             bash scripts/test-static.sh
           '
       - name: Run without any libc, loader or SQLite installation
-        run: docker run --rm --network none --tmpfs /tmp:exec,mode=1777 -e SQLITE_REQUIRE_FEATURES=1 -v "$PWD/.native/static/driver.test:/driver.test:ro" scratch /driver.test -test.v -test.timeout=3m
+        run: |
+          docker build -t sqlite-static-test -f - .native/static <<'DOCKERFILE'
+          FROM scratch
+          COPY driver.test /driver.test
+          ENTRYPOINT ["/driver.test"]
+          DOCKERFILE
+          docker run --rm --network none --tmpfs /tmp:exec,mode=1777 -e SQLITE_REQUIRE_FEATURES=1 sqlite-static-test -test.v -test.timeout=3m

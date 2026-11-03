@@ -42,7 +42,9 @@ CGO_ENABLED=0 go build ./...
 
 `sql.Open` is lazy about opening connections. Use `PingContext` to check access.
 The driver is registered as `sqlite3purego`, so it can coexist with mattn's
-`sqlite3` registration.
+`sqlite3` registration. In CGO builds importing both drivers, use mattn's
+`libsqlite3` tag to share the linked engine, or `sqlite_dynamic` to exclude this
+package's amalgamation; do not link two copies defining the same SQLite symbols.
 
 ## Backend selection and platforms
 
