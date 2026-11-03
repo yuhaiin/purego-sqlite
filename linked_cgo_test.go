@@ -3,7 +3,6 @@
 package sqlite
 
 import (
-	"context"
 	"strings"
 	"testing"
 )
@@ -22,7 +21,7 @@ func TestDefaultCGOUsesLinkedEngine(t *testing.T) {
 			t.Fatal(feature, ok, err)
 		}
 	}
-	connection, err := connector.Connect(context.Background())
+	connection, err := connector.Connect(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

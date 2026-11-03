@@ -377,8 +377,8 @@ CGO-free dependency graph, file-backed integration tests, native capabilities,
 locally compiled extensions, embedded integrity and benchmark smoke tests.
 Native jobs use all six primary OS/architecture combinations; race jobs cover
 Linux and macOS. The CGO backend also runs under strict `cgocheck2` and race checks
-on those Unix runners. Additional jobs run automatic fallback on FreeBSD amd64
-and Linux mipsle/QEMU (`scripts/test-mipsle.sh`). Optional system features may skip when absent; bundled feature jobs require
+on those Unix runners. Additional jobs exercise CGO and PureGo on FreeBSD amd64,
+CGO on Linux mipsle/QEMU and fully static musl executables on Alpine amd64/arm64 (`scripts/test-mipsle.sh`). Optional system features may skip when absent; bundled feature jobs require
 FTS5, JSON/JSONB and RTree. Apple arm64's secure extension limitation is reported
 separately. Tests cover repeated cancellation/reuse, lifecycle races, connection
 churn, empty/NUL/large bindings, metadata changes, transaction error recovery,

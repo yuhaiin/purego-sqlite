@@ -1,8 +1,9 @@
-# Same-library mattn benchmark
+# Same-engine mattn benchmarks
 
 This directory is a separate Go module so `mattn/go-sqlite3` remains a benchmark-only dependency. CGO is the default
-production backend when enabled; PureGo remains CGO-free. The pinned comparison is mattn v1.14.52
-versus PureGo v0.11.3 with the driver implementation at `e547a78`.
+production backend when enabled; PureGo remains CGO-free. The comparison pins mattn v1.14.52 and PureGo v0.11.3. Historical measurements
+below used driver implementation `e547a78`; the new default-CGO measurements
+are linked separately in the next section.
 
 ## Default CGO and current PureGo measurements (2026-11-04)
 
