@@ -1,6 +1,5 @@
-//go:build (!linux && !darwin && !windows) || (!amd64 && !arm64)
+//go:build (!cgo || (!linux && !darwin && !windows && !freebsd && !openbsd && !netbsd && !dragonfly)) && (sqlite_cgo || (!linux && !darwin && !windows) || (!amd64 && !arm64))
 
 package ffi
 
-func register(any, uintptr)                 { panic("unreachable on unsupported platform") }
-func splitSymbol(tag string) (string, bool) { return tag, false }
+func registerAPI(*API, any, string, uintptr) { panic("unreachable: backend unavailable") }

@@ -1,5 +1,6 @@
-// Package sqlite is a CGO-free database/sql driver for the official native SQLite
-// engine via PureGo FFI. It registers the driver name "sqlite3purego".
+// Package sqlite is a database/sql driver for the official native SQLite engine.
+// Supported desktop targets use PureGo; other targets use a CGO fallback.
+// It registers the driver name "sqlite3purego".
 package sqlite
 
 import (

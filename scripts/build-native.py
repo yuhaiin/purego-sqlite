@@ -10,7 +10,6 @@ import io
 import json
 import os
 from pathlib import Path
-import platform
 import shlex
 import subprocess
 import urllib.request
@@ -36,9 +35,12 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--embed", action="store_true")
+    parser.add_argument("--goos", help="target GOOS (defaults to go env GOOS)")
+    parser.add_argument("--goarch", help="target GOARCH (defaults to go env GOARCH)")
+    parser.add_argument("--output", type=Path, default=ROOT / ".native")
     args = parser.parse_args()
-    out = ROOT / ".native"
-    out.mkdir(exist_ok=True)
+    out = args.output.resolve()
+    out.mkdir(parents=True, exist_ok=True)
     archive = out / ARCHIVE
     if not archive.exists():
         with urllib.request.urlopen(URL, timeout=60) as response:
@@ -55,16 +57,16 @@ def main():
     with zipfile.ZipFile(io.BytesIO(data)) as z:
         for filename in ("sqlite3.c", "sqlite3.h", "sqlite3ext.h"):
             (source / filename).write_bytes(z.read("sqlite-amalgamation-3540100/" + filename))
-    goos = {"Linux": "linux", "Darwin": "darwin", "Windows": "windows"}[platform.system()]
-    arch = {"x86_64": "amd64", "AMD64": "amd64", "aarch64": "arm64", "arm64": "arm64", "ARM64": "arm64"}[platform.machine()]
+    target = subprocess.check_output(["go", "env", "GOOS", "GOARCH"], text=True).splitlines()
+    goos, arch = args.goos or target[0], args.goarch or target[1]
     compiler = shlex.split(os.environ.get("CC", "clang" if goos == "windows" else "cc"))
-    filename = {"linux": "libsqlite3.so", "darwin": "libsqlite3.dylib", "windows": "sqlite3.dll"}[goos]
+    filename = {"darwin": "libsqlite3.dylib", "windows": "sqlite3.dll"}.get(goos, "libsqlite3.so")
     extension = "test_extension.dll" if goos == "windows" else "test_extension.so"
     shared = ["-dynamiclib"] if goos == "darwin" else ["-shared"]
     common = ["-O2"] + shared
     if goos != "windows":
         common += ["-fPIC"]
-    libs = ["-lm", "-lpthread", "-ldl"] if goos == "linux" else (["-lm", "-lpthread"] if goos == "darwin" else [])
+    libs = ["-lm", "-lpthread", "-ldl"] if goos == "linux" else ([] if goos == "windows" else ["-lm", "-lpthread"])
     flags = FLAGS + (["-DSQLITE_API=__declspec(dllexport)"] if goos == "windows" else [])
     run(compiler + common + flags + [str(source / "sqlite3.c"), "-o", str(out / filename)] + libs)
     run(compiler + common + ["-I" + str(source), str(ROOT / "tests/testdata/extension.c"), "-o", str(out / extension)])
