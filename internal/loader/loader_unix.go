@@ -1,4 +1,4 @@
-//go:build (linux || darwin) && (amd64 || arm64)
+//go:build (linux || darwin) && (amd64 || arm64) && !sqlite_cgo
 
 package loader
 

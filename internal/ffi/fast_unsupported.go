@@ -1,4 +1,4 @@
-//go:build (!linux && !darwin && !windows) || (!amd64 && !arm64)
+//go:build sqlite_cgo || (!linux && !darwin && !windows) || (!amd64 && !arm64)
 
 package ffi
 

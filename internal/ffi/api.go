@@ -5,6 +5,7 @@ package ffi
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/yuhaiin/purego-sqlite/internal/loader"
@@ -14,7 +15,7 @@ const (
 	OK   = 0
 	Row  = 100
 	Done = 101
-	// SQLITE_TRANSIENT is (sqlite3_destructor_type)-1 on the supported 64-bit ABIs.
+	// SQLITE_TRANSIENT is (sqlite3_destructor_type)-1 on the supported pointer-width ABIs.
 	Transient = ^uintptr(0)
 )
 
@@ -120,7 +121,12 @@ func bind(a *API, h uintptr) error {
 			}
 			return fmt.Errorf("sqlite: missing required symbol %s: %w", name, err)
 		}
-		register(v.Field(i).Addr().Interface(), symbol)
+		registerAPI(a, v.Field(i).Addr().Interface(), name, symbol)
 	}
 	return nil
+}
+
+func splitSymbol(tag string) (string, bool) {
+	name, _, optional := strings.Cut(tag, ",")
+	return name, optional
 }

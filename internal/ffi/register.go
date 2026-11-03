@@ -1,14 +1,11 @@
-//go:build (linux || darwin || windows) && (amd64 || arm64)
+//go:build (linux || darwin || windows) && (amd64 || arm64) && !sqlite_cgo
 
 package ffi
 
 import (
 	"github.com/ebitengine/purego"
-	"strings"
 )
 
 func register(fn any, symbol uintptr) { purego.RegisterFunc(fn, symbol) }
-func splitSymbol(tag string) (string, bool) {
-	name, _, optional := strings.Cut(tag, ",")
-	return name, optional
-}
+
+func registerAPI(_ *API, fn any, _ string, symbol uintptr) { register(fn, symbol) }

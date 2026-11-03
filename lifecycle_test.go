@@ -75,7 +75,13 @@ func TestCrashRecovery(t *testing.T) {
 	for _, wal := range []string{"0", "1"} {
 		t.Run("wal="+wal, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "recovery.db")
-			command := osexec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestCrashRecovery$")
+			executable := os.Args[0]
+			args := []string{"-test.run=^TestCrashRecovery$"}
+			if emulator := os.Getenv("SQLITE_TEST_EMULATOR"); emulator != "" {
+				args = append([]string{executable}, args...)
+				executable = emulator
+			}
+			command := osexec.CommandContext(t.Context(), executable, args...)
 			command.Env = append(os.Environ(), "SQLITE_CRASH_FIXTURE="+path, "SQLITE_CRASH_WAL="+wal)
 			if output, err := command.CombinedOutput(); err != nil {
 				t.Fatalf("fixture: %v\n%s", err, output)
