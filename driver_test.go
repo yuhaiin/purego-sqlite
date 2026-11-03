@@ -290,6 +290,7 @@ func TestActiveRowsAndOwnership(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	//lint:ignore SA1019 Exercise the required legacy driver.Stmt.Query interface.
 	r, err := s.Query([]driver.Value{[]byte{1, 2, 3}})
 	if err != nil {
 		t.Fatal(err)

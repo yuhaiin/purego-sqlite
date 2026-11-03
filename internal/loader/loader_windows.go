@@ -6,11 +6,7 @@ import "golang.org/x/sys/windows"
 
 func systemPaths() []string { return nil }
 func open(path string) (uintptr, error) {
-	p, err := windows.UTF16PtrFromString(path)
-	if err != nil {
-		return 0, err
-	}
-	h, err := windows.LoadLibraryEx(p, 0, windows.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR|windows.LOAD_LIBRARY_SEARCH_SYSTEM32)
+	h, err := windows.LoadLibraryEx(path, 0, windows.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR|windows.LOAD_LIBRARY_SEARCH_SYSTEM32)
 	return uintptr(h), err
 }
 func Symbol(handle uintptr, name string) (uintptr, error) {
