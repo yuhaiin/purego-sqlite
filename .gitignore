@@ -1,0 +1,6 @@
+.native/
+internal/native/asset_*.go
+internal/native/assets/
+*.test
+*.test.exe
+benchmarks/results/local-*

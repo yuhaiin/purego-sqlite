@@ -1,0 +1,123 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.27.3'
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+        env:
+          CGO_ENABLED: '0'
+      - run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+        env:
+          CGO_ENABLED: '0'
+      - run: go test ./...
+        env:
+          CGO_ENABLED: '0'
+      - name: Verify production dependency graph has no CgoFiles
+        run: test -z "$(CGO_ENABLED=0 go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
+      - name: Minimum Go version
+        run: GOTOOLCHAIN=go1.26.0 CGO_ENABLED=0 go test ./...
+
+  native:
+    name: native (${{ matrix.os }}, ${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+            race: true
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            race: true
+          - os: macos-15-intel
+            arch: amd64
+            race: true
+          - os: macos-15
+            arch: arm64
+            race: true
+          - os: windows-2025
+            arch: amd64
+            race: false
+          - os: windows-11-arm
+            arch: arm64
+            race: false
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CGO_ENABLED: '0'
+      SQLITE_REQUIRE_FEATURES: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.27.3'
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+        if: runner.os == 'Windows'
+        with:
+          arch: ${{ matrix.arch }}
+      - name: Build pinned native library and local test extension
+        run: python3 scripts/build-native.py --embed
+      - name: Select absolute native paths
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          from pathlib import Path
+          import platform
+          p = Path('.native').resolve()
+          library = {'Linux':'libsqlite3.so','Darwin':'libsqlite3.dylib','Windows':'sqlite3.dll'}[platform.system()]
+          extension = 'test_extension.dll' if platform.system() == 'Windows' else 'test_extension.so'
+          print('SQLITE_TEST_LIBRARY=' + str(p/library))
+          print('SQLITE_TEST_EXTENSION=' + str(p/extension))
+          PY
+      - run: go test -v -timeout 3m ./...
+      - run: go vet ./...
+      - name: Race and native lifetime tests
+        if: matrix.race
+        env:
+          CGO_ENABLED: '1'
+        run: go test -race -timeout 3m ./...
+      - name: Embedded library with CGO disabled
+        env:
+          SQLITE_TEST_BUNDLED: '1'
+          SQLITE_TEST_LIBRARY: ''
+        run: go test -tags sqlite_bundle -timeout 3m ./...
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: native-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            .native/manifest.json
+            internal/native/asset_*.go
+            internal/native/assets/*
+
+  benchmarks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: benchmarks/go.sum
+      - run: python3 scripts/build-native.py
+      - name: Same-library mattn comparison smoke test
+        run: scripts/benchmark.sh -benchtime=1x -count=1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: benchmark-smoke
+          path: |
+            benchmarks/results/local-*
+            .native/manifest.json
