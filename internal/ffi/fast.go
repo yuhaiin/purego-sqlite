@@ -26,6 +26,7 @@ func bindFast(a *API, h uintptr) {
 		"sqlite3_column_text", "sqlite3_column_blob", "sqlite3_bind_text", "sqlite3_bind_blob",
 		"sqlite3_bind_int64", "sqlite3_column_int64", "sqlite3_last_insert_rowid", "sqlite3_changes64",
 		"sqlite3_prepare_v3",
+		"sqlite3_column_name", "sqlite3_column_decltype", "sqlite3_bind_parameter_name",
 	} {
 		symbols[name], _ = loader.Symbol(h, name)
 	}
@@ -71,7 +72,7 @@ func bindConnectionCalls(a *API, symbols map[string]uintptr) {
 	a.Finalize = one("sqlite3_finalize")
 	a.BindParameterCount = one("sqlite3_bind_parameter_count")
 	a.ColumnCount = one("sqlite3_column_count")
-	columnPointer := func(name string) func(uintptr, int32) *byte {
+	nativePointer := func(name string) func(uintptr, int32) *byte {
 		p := symbol(name)
 		return func(stmt uintptr, index int32) *byte {
 			r := callInts(p, 2, stmt, uintptr(index), 0)
@@ -81,8 +82,17 @@ func bindConnectionCalls(a *API, symbols map[string]uintptr) {
 			return *(**byte)(unsafe.Pointer(&r))
 		}
 	}
-	a.ColumnText = columnPointer("sqlite3_column_text")
-	a.ColumnBlob = columnPointer("sqlite3_column_blob")
+	a.ColumnText = nativePointer("sqlite3_column_text")
+	a.ColumnBlob = nativePointer("sqlite3_column_blob")
+	metadata := func(name string) func(uintptr, int32) string {
+		pointer := nativePointer(name)
+		return func(stmt uintptr, index int32) string {
+			return copyCString(pointer(stmt, index))
+		}
+	}
+	a.ColumnName = metadata("sqlite3_column_name")
+	a.ColumnDecltype = metadata("sqlite3_column_decltype")
+	a.BindParameterName = metadata("sqlite3_bind_parameter_name")
 	bindBytes := func(name string) func(uintptr, int32, *byte, int32, uintptr) int32 {
 		p := symbol(name)
 		return func(stmt uintptr, index int32, data *byte, n int32, destructor uintptr) int32 {
@@ -124,4 +134,17 @@ func bindConnectionCalls(a *API, symbols map[string]uintptr) {
 	if p := symbol("sqlite3_changes64"); p != 0 {
 		a.Changes64 = func(db uintptr) int64 { return int64(callInts(p, 1, db, 0, 0)) }
 	}
+}
+
+// Metadata is native NUL-terminated text owned by the statement. Return a copy
+// while Conn.mu still protects it, including after SQLite's automatic reprepare.
+func copyCString(p *byte) string {
+	if p == nil {
+		return ""
+	}
+	n := 0
+	for *(*byte)(unsafe.Add(unsafe.Pointer(p), n)) != 0 {
+		n++
+	}
+	return string(unsafe.Slice(p, n))
 }

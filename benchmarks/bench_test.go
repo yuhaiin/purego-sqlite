@@ -122,6 +122,7 @@ func BenchmarkSQLite(b *testing.B) {
 		{"OpenClose", benchOpenClose}, {"SelectConstant", benchConstant},
 		{"SingleInsert", benchInsert}, {"PreparedInsert", benchPreparedInsert},
 		{"BatchInsert1000", func(b *testing.B, d string) { benchBatch(b, d, 1000) }},
+		{"BatchInsert1000Values", benchBatchValues},
 		{"TransactionInsert100000", func(b *testing.B, d string) { benchBatch(b, d, 100000) }},
 		{"SingleRowSelect", benchSingleRow}, {"FullScan1000", benchScan}, {"IndexedLookup", benchIndexed},
 		{"LargeTextRead", func(b *testing.B, d string) { benchPayload(b, d, false, false) }},
@@ -211,6 +212,45 @@ func benchBatch(b *testing.B, d string, n int) {
 		}
 	}
 	b.ReportMetric(float64(n), "rows/op")
+	throughput(b)
+}
+
+// Keep the row-at-a-time transaction case above. This separately measures a
+// common batched SQL shape: 1000 bindings, one Step/result/reset per transaction.
+func benchBatchValues(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	query := "INSERT INTO events(value) VALUES" + strings.TrimSuffix(strings.Repeat("(?),", 1000), ",")
+	args := make([]any, 1000)
+	for i := range args {
+		args[i] = int64(i)
+	}
+	for b.Loop() {
+		b.StopTimer()
+		exec(b, db, "DELETE FROM events")
+		b.StartTimer()
+		tx, err := db.Begin()
+		if err != nil {
+			b.Fatal(err)
+		}
+		s, err := tx.Prepare(query)
+		if err != nil {
+			b.Fatal(err)
+		}
+		result, err := s.Exec(args...)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if n, err := result.RowsAffected(); err != nil || n != 1000 {
+			b.Fatal(n, err)
+		}
+		if err := s.Close(); err != nil {
+			b.Fatal(err)
+		}
+		if err := tx.Commit(); err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.ReportMetric(1000, "rows/op")
 	throughput(b)
 }
 func benchSingleRow(b *testing.B, d string) {

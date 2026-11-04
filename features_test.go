@@ -190,14 +190,25 @@ func TestExtensions(t *testing.T) {
 
 func TestSchemaReprepare(t *testing.T) {
 	db := testDB(t)
-	exec(t, db, "CREATE TABLE t(a)")
+	exec(t, db, "CREATE TABLE t(a INTEGER)")
 	exec(t, db, "INSERT INTO t VALUES(1)")
 	s, err := db.Prepare("SELECT * FROM t")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	exec(t, db, "ALTER TABLE t ADD COLUMN b DEFAULT 2")
+	before, err := s.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeTypes, err := before.ColumnTypes()
+	if err != nil || len(beforeTypes) != 1 || beforeTypes[0].DatabaseTypeName() != "INTEGER" {
+		t.Fatal(beforeTypes, err)
+	}
+	if err := before.Close(); err != nil {
+		t.Fatal(err)
+	}
+	exec(t, db, "ALTER TABLE t ADD COLUMN b TEXT DEFAULT 'two'")
 	r, err := s.Query()
 	if err != nil {
 		t.Fatal(err)
@@ -207,11 +218,16 @@ func TestSchemaReprepare(t *testing.T) {
 	if err != nil || len(cols) != 2 {
 		t.Fatalf("reprepare columns: %v %v", cols, err)
 	}
+	types, err := r.ColumnTypes()
+	if err != nil || len(types) != 2 || types[0].DatabaseTypeName() != "INTEGER" || types[1].DatabaseTypeName() != "TEXT" {
+		t.Fatal(types, err)
+	}
 	if !r.Next() {
 		t.Fatal(r.Err())
 	}
-	var a, b int
-	if err := r.Scan(&a, &b); err != nil || a != 1 || b != 2 {
+	var a int
+	var b string
+	if err := r.Scan(&a, &b); err != nil || a != 1 || b != "two" {
 		t.Fatal(a, b, err)
 	}
 }

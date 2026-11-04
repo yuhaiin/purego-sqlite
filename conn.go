@@ -20,6 +20,7 @@ type Conn struct {
 	cfg    config
 	db     uintptr
 	stmts  map[*stmt]struct{}
+	sqlbuf []byte // Conn.mu protects a bounded prepare buffer; SQLite copies SQL.
 	active *rows
 	tx     *transaction
 }
@@ -103,6 +104,7 @@ func (c *Conn) Close() error {
 		return c.sqliteError(rc)
 	}
 	c.db = 0
+	c.sqlbuf = nil
 	return nil
 }
 func (c *Conn) Prepare(query string) (driver.Stmt, error) {
@@ -137,7 +139,7 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 			return err
 		}
 		defer s.closeLocked()
-		result, err = s.execLocked(args)
+		result, err = s.execLocked(args, false)
 		return err
 	})
 	return result, err
@@ -226,6 +228,6 @@ func (c *Conn) execSQLLocked(query string) error {
 		return err
 	}
 	defer s.closeLocked()
-	_, err = s.execLocked(nil)
+	_, err = s.execLocked(nil, false)
 	return err
 }

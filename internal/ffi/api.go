@@ -24,7 +24,7 @@ type API struct {
 	Path       string
 	// Exec drains rows and reads execution metadata before reset can change errors.
 	// ResetClear returns the reset status; clearing bindings must still run on error.
-	Exec                func(stmt, db uintptr) (rc int32, lastID, changes int64)
+	Exec                func(stmt, db uintptr, knownWrite bool) (rc int32, lastID, changes int64)
 	ResetClear          func(uintptr) int32
 	Open                func(string, *uintptr, int32, uintptr) int32                `sqlite:"sqlite3_open_v2"`
 	Close               func(uintptr) int32                                         `sqlite:"sqlite3_close"`
@@ -123,11 +123,11 @@ func (a *API) ForConnection() *API {
 }
 
 func (a *API) bindOperations() {
-	a.Exec = func(stmt, db uintptr) (rc int32, lastID, changes int64) {
+	a.Exec = func(stmt, db uintptr, knownWrite bool) (rc int32, lastID, changes int64) {
 		for rc = a.Step(stmt); rc == Row; rc = a.Step(stmt) {
 		}
 		if rc == Done {
-			if a.StmtReadonly(stmt) == 0 {
+			if knownWrite || a.StmtReadonly(stmt) == 0 {
 				if a.Changes64 != nil {
 					changes = a.Changes64(db)
 				} else {

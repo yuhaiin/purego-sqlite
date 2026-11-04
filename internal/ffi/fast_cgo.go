@@ -49,7 +49,7 @@ func bindFast(a *API, h uintptr) {
 		changes: symbol("sqlite3_changes"), changes64: symbol("sqlite3_changes64"),
 		rowid: symbol("sqlite3_last_insert_rowid"),
 	}
-	a.Exec = func(stmt, db uintptr) (int32, int64, int64) {
+	a.Exec = func(stmt, db uintptr, _ bool) (int32, int64, int64) {
 		r := C.exec_statement(&f, C.uintptr_t(stmt), C.uintptr_t(db))
 		return int32(r.rc), int64(r.last_id), int64(r.changes)
 	}
