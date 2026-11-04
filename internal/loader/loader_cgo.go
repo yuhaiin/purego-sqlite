@@ -1,4 +1,4 @@
-//go:build !windows && cgo && (linux || darwin || windows || freebsd || openbsd || netbsd || dragonfly) && (sqlite_cgo || (!linux && !darwin && !windows) || (!amd64 && !arm64))
+//go:build !windows && cgo && !sqlite_purego && (linux || darwin || windows || freebsd || openbsd || netbsd || dragonfly)
 
 package loader
 
@@ -56,7 +56,7 @@ func open(path string) (uintptr, error) {
 	}
 	return uintptr(r.value), loadError(r.error)
 }
-func Symbol(handle uintptr, name string) (uintptr, error) {
+func symbol(handle uintptr, name string) (uintptr, error) {
 	p := C.CString(name)
 	defer C.free(unsafe.Pointer(p))
 	r := C.load_symbol(C.uintptr_t(handle), p)
@@ -65,4 +65,4 @@ func Symbol(handle uintptr, name string) (uintptr, error) {
 	}
 	return uintptr(r.value), loadError(r.error)
 }
-func Close(handle uintptr) error { return loadError(C.close_library(C.uintptr_t(handle))) }
+func closeLibrary(handle uintptr) error { return loadError(C.close_library(C.uintptr_t(handle))) }

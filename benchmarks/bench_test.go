@@ -16,12 +16,12 @@ import (
 	sqlite "github.com/yuhaiin/purego-sqlite"
 )
 
-var drivers = []string{"purego", "mattn"}
+var drivers = []string{backendName, "mattn"}
 
 func open(b testing.TB, implementation, path string, connections int) *sql.DB {
 	b.Helper()
 	var db *sql.DB
-	if implementation == "purego" {
+	if implementation != "mattn" {
 		var opts []sqlite.Option
 		if lib := os.Getenv("BENCH_SQLITE_LIBRARY"); lib != "" {
 			opts = append(opts, sqlite.WithLibrary(lib))

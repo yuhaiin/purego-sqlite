@@ -1,4 +1,4 @@
-//go:build (!cgo || (!linux && !darwin && !windows && !freebsd && !openbsd && !netbsd && !dragonfly)) && (sqlite_cgo || (!linux && !darwin && !windows) || (!amd64 && !arm64))
+//go:build !((linux || darwin || windows || freebsd || netbsd) && (amd64 || arm64) && (!cgo || sqlite_purego) && !sqlite_cgo) && !(cgo && !sqlite_purego && (linux || darwin || windows || freebsd || openbsd || netbsd || dragonfly))
 
 package ffi
 

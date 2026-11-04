@@ -8,16 +8,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def check(goos, arch, cgo, forced=False):
+def check(goos, arch, cgo, forced=False, purego=False):
     env = dict(os.environ, GOOS=goos, GOARCH=arch, CGO_ENABLED=str(cgo))
     args = ["go", "list", "-json"]
     if forced:
         args += ["-tags", "sqlite_cgo"]
+    if purego:
+        args += ["-tags", "sqlite_purego"]
     args += ["./internal/ffi"]
     package = json.loads(subprocess.check_output(args, cwd=ROOT, env=env))
     files = package.get("GoFiles", []) + package.get("CgoFiles", [])
-    primary = goos in ("linux", "darwin", "windows") and arch in ("amd64", "arm64")
-    expected = "register.go" if primary and not forced else ("register_cgo.go" if cgo else "register_unsupported.go")
+    primary = goos in ("linux", "darwin", "windows", "freebsd", "netbsd") and arch in ("amd64", "arm64")
+    expected = "register_cgo.go" if cgo and not purego else ("register.go" if primary and not forced else "register_unsupported.go")
     selected = set(files) & {"register.go", "register_cgo.go", "register_unsupported.go"}
     if selected != {expected}:
         raise SystemExit(f"wrong backend for {goos}/{arch} cgo={cgo} forced={forced}: {selected}, want {expected}")
@@ -35,3 +37,6 @@ for target in [("linux", "amd64"), ("linux", "arm64"), ("darwin", "amd64"),
         check(*target, enabled)
 for enabled in (0, 1):
     check("linux", "amd64", enabled, forced=True)
+
+for target in [("linux","amd64"),("freebsd","amd64"),("netbsd","arm64")]:
+    check(*target,1,purego=True)
