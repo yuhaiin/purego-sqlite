@@ -31,7 +31,7 @@ jobs:
         with:
           go-version: '1.27.3'
           cache-dependency-path: benchmarks/go.sum
-      - run: python3 scripts/build-native.py
+      - run: go run ./internal/cmd/build-native
       - name: Select the committed embed asset and record environment
         run: |
           mkdir -p .native/embed/src benchmarks/results

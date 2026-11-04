@@ -35,8 +35,7 @@ jobs:
           CGO_ENABLED=0 go test -tags sqlite_cgo ./internal/loader
       - name: Verify generated CGO bridges
         run: |
-          python3 scripts/generate-cgo.py
-          python3 scripts/vendor-sqlite.py
+          go generate ./...
           git diff --exit-code
       - name: CGO static analysis
         run: |
@@ -86,7 +85,7 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
       - name: Build pinned native library and local test extension
-        run: python3 scripts/build-native.py --embed
+        run: go run ./internal/cmd/build-native --embed
       - name: Select absolute native paths
         run: |
           python3 - <<'PY' >> "$GITHUB_ENV"
@@ -143,7 +142,7 @@ jobs:
           SQLITE_TEST_ROW_BRIDGE: '1'
           SQLITE_TEST_EXEC_BRIDGE: '1'
         run: |
-          python3 scripts/build-native.py --row-bridge --exec-bridge --output .native/row-bridge
+          go run ./internal/cmd/build-native --row-bridge --exec-bridge --output .native/row-bridge
           export SQLITE_TEST_LIBRARY="$(python3 -c 'from pathlib import Path; import platform; print((Path(".native/row-bridge") / {"Linux":"libsqlite3.so","Darwin":"libsqlite3.dylib","Windows":"sqlite3.dll"}[platform.system()]).resolve())')"
           go test -gcflags=all=-d=checkptr=2 -timeout 3m ./...
           if [ "${{ matrix.race }}" = true ]; then
@@ -174,7 +173,7 @@ jobs:
         with:
           go-version: '1.27.3'
           cache-dependency-path: benchmarks/go.sum
-      - run: python3 scripts/build-native.py
+      - run: go run ./internal/cmd/build-native
       - name: PureGo, static and dynamic CGO, mattn and modernc comparisons
         run: |
           scripts/benchmark.sh -benchtime=1x -count=1
@@ -219,14 +218,14 @@ jobs:
         shell: cpa.sh {0}
         run: |
           set -eu
-          sudo pkg install -y python311 ca_root_nss sqlite3
+          sudo pkg install -y ca_root_nss sqlite3
           fetch -o /tmp/sqlite-test-go.tar.gz https://go.dev/dl/go1.27.3.freebsd-amd64.tar.gz
           test "$(sha256 -q /tmp/sqlite-test-go.tar.gz)" = c15c88d07d6b2d2db5df7b65d9b9c73d631ac4e787da04e2bef2a5b6952c2cbb
           tar -C /tmp -xzf /tmp/sqlite-test-go.tar.gz
           export PATH="/tmp/go/bin:$PATH"
           export CGO_ENABLED=1
           go test -timeout 3m ./...
-          python3.11 scripts/build-native.py --embed
+          go run ./internal/cmd/build-native --embed
           export SQLITE_TEST_LIBRARY="$PWD/.native/libsqlite3.so"
           export SQLITE_TEST_EXTENSION="$PWD/.native/test_extension.so"
           export SQLITE_REQUIRE_FEATURES=1

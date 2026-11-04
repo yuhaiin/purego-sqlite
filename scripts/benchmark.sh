@@ -5,7 +5,7 @@ repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 native_dir="${BENCH_NATIVE_DIR:-$repo_dir/.native}"
 native_dir=$(realpath "$native_dir")
 if [[ ! -f "$native_dir/libsqlite3.so" ]]; then
-  python3 "$repo_dir/scripts/build-native.py" --output "$native_dir"
+  (cd "$repo_dir" && go run ./internal/cmd/build-native --output "$native_dir")
 fi
 export CGO_ENABLED=1
 export CGO_CFLAGS="-O2 -g -I$native_dir/src"

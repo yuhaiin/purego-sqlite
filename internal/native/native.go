@@ -16,7 +16,7 @@ var asset []byte
 var digest, filename string
 var extract = sync.OnceValues(func() (string, error) {
 	if len(asset) == 0 {
-		return "", errors.New("sqlite: no bundled asset; run scripts/build-native.py --embed and build with -tags sqlite_bundle")
+		return "", errors.New("sqlite: no bundled asset; generate it with go run ./internal/cmd/build-native -embed and build with -tags sqlite_bundle")
 	}
 	sum := sha256.Sum256(asset)
 	if hex.EncodeToString(sum[:]) != digest {

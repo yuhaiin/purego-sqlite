@@ -1,0 +1,114 @@
+name: Update SQLite source
+on:
+  schedule:
+    - cron: '43 3 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Validate and regenerate even if SQLite is unchanged
+        type: boolean
+        default: false
+      publish:
+        description: Open or update the source update PR after validation
+        type: boolean
+        default: true
+  push:
+    branches: ['codex/**']
+    paths:
+      - '.github/workflows/update-sqlite.yml'
+      - 'internal/cmd/check-update/**'
+      - 'internal/sqlitesource/**'
+permissions:
+  contents: read
+concurrency:
+  group: sqlite-source-update-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./internal/sqlitesource ./internal/vendoredsqlite
+      - id: check
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ "$FORCE" = true ]; then
+            go run ./internal/cmd/check-update --force
+          else
+            go run ./internal/cmd/check-update
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: steps.check.outputs.changed == 'true'
+        with:
+          name: sqlite-source-pin
+          path: scripts/source.json
+          retention-days: 7
+  update:
+    needs: check
+    if: needs.check.outputs.changed == 'true' && github.event_name != 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.27.3'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: sqlite-source-pin
+          path: scripts
+      - name: Refresh and verify the official amalgamation
+        run: go run ./internal/cmd/vendor-sqlite -update
+      - name: Validate the linked CGO engine
+        env:
+          CGO_ENABLED: '1'
+          GOEXPERIMENT: cgocheck2
+          SQLITE_REQUIRE_FEATURES: '1'
+        run: go test -race -timeout 3m ./...
+      - name: Build and validate the same source through PureGo
+        env:
+          CGO_ENABLED: '0'
+          SQLITE_REQUIRE_FEATURES: '1'
+          SQLITE_TEST_ROW_BRIDGE: '1'
+          SQLITE_TEST_EXEC_BRIDGE: '1'
+        run: |
+          go run ./internal/cmd/build-native --row-bridge --exec-bridge --output .native/update
+          SQLITE_TEST_LIBRARY="$PWD/.native/update/libsqlite3.so" \
+            SQLITE_TEST_EXTENSION="$PWD/.native/update/test_extension.so" \
+            go test -timeout 3m ./...
+          go run ./internal/cmd/vendor-sqlite
+      - name: Get repository-scoped updater App token
+        if: github.event_name == 'schedule' || inputs.publish
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          client-id: ${{ vars.APP_ID || '1142630' }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Open source update pull request
+        if: github.event_name == 'schedule' || inputs.publish
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.app.outputs.token }}
+          branch: auto-update/sqlite-source
+          title: 'Update linked SQLite to ${{ needs.check.outputs.version }}'
+          commit-message: 'Update linked SQLite to ${{ needs.check.outputs.version }}'
+          body: |
+            Update the official amalgamation and headers, source checksums and linked runtime version together.
+            The archive is verified against SQLite's stable-release metadata and SHA3-256 before vendoring.
+            The linked CGO engine and PureGo library built from the same source pass tests before publication.
+            Ordinary platform CI runs on this App-created PR. Review before merging; no automatic merge.
+          add-paths: |
+            scripts/source.json
+            internal/sqlite3/
+          delete-branch: true
