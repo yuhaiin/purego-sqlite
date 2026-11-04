@@ -1,7 +1,7 @@
 goos: linux
 goarch: amd64
 pkg: github.com/yuhaiin/purego-sqlite
-cpu: AMD EPYC 7763 64-Core Processor                
+cpu: AMD EPYC 7763 64-Core Processor
 BenchmarkScalarExec/BatchInsert1000/standard-4         	     450	   1293375 ns/op	      1000 rows/op	  125338 B/op	    5516 allocs/op
 BenchmarkScalarExec/BatchInsert1000/standard-4         	     462	   1385768 ns/op	      1000 rows/op	  125195 B/op	    5516 allocs/op
 BenchmarkScalarExec/BatchInsert1000/standard-4         	     430	   1338396 ns/op	      1000 rows/op	  125189 B/op	    5516 allocs/op

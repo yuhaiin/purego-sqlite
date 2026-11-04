@@ -297,5 +297,6 @@
     "CPU affinity is recorded, but frequency and physical-host isolation are not guaranteed. Small differences and parallel-contention rankings are exploratory.",
     "Go allocation metrics exclude native row/scalar scratch and engine allocations.",
     "Local diagnostic full runs affected by recurring ffmpeg load are excluded; original logs remain under .native/exec-* in the working checkout."
-  ]
+  ],
+  "raw_log_normalization": "Only trailing padding on Go's CPU header is removed. All benchmark sample lines are unchanged; the workflow artifact retains the original bytes."
 }

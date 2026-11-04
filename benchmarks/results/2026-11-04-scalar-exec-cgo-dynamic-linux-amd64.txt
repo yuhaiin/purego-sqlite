@@ -71,7 +71,7 @@
 goos: linux
 goarch: amd64
 pkg: github.com/yuhaiin/purego-sqlite/benchmarks
-cpu: AMD EPYC 7763 64-Core Processor                
+cpu: AMD EPYC 7763 64-Core Processor
 BenchmarkSQLite
 BenchmarkSQLite/OpenClose
 BenchmarkSQLite/OpenClose/cgo
