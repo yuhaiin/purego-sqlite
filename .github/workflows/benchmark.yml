@@ -1,0 +1,75 @@
+name: Full benchmark comparison
+on:
+  workflow_dispatch:
+    inputs:
+      embed_ref:
+        description: 'purego-sqlite-embed commit to benchmark (recorded in artifacts)'
+        required: true
+        default: d721bc5e9a2a89ea6ba817041072c1c4bcf32b6a
+  push:
+    branches: ['codex/**']
+    paths:
+      - '.github/workflows/benchmark.yml'
+      - 'scripts/benchmark-all.sh'
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GOMAXPROCS: '4'
+      TMPDIR: /dev/shm
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: yuhaiin/purego-sqlite-embed
+          ref: ${{ inputs.embed_ref || 'd721bc5e9a2a89ea6ba817041072c1c4bcf32b6a' }}
+          path: .native/embed-repo
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: benchmarks/go.sum
+      - run: python3 scripts/build-native.py
+      - name: Select the committed embed asset and record environment
+        run: |
+          mkdir -p .native/embed/src benchmarks/results
+          cp .native/embed-repo/assets/linux_amd64_glibc/libsqlite3.so .native/embed/
+          cp .native/embed-repo/assets/linux_amd64_glibc/manifest.json .native/embed/
+          cp .native/src/sqlite3.h .native/embed/src/
+          python3 - <<'PY'
+          import json, os, platform, subprocess
+          from pathlib import Path
+          def output(*args):
+              return subprocess.check_output(args, text=True).strip()
+          cpus = sorted(os.sched_getaffinity(0))
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('BENCH_CPUSET=' + ','.join(map(str, cpus)) + '\n')
+              f.write('BENCH_EMBED_DIR=' + str(Path('.native/embed').resolve()) + '\n')
+          info = dict(implementation_commit=output('git','rev-parse','HEAD'),
+                      embed_commit=output('git','-C','.native/embed-repo','rev-parse','HEAD'),
+                      go=output('go','version'), platform=platform.platform(), gomaxprocs=4,
+                      cpu_affinity=cpus, lscpu=json.loads(output('lscpu','--json')),
+                      filesystem=output('df','-T','/dev/shm'),
+                      benchtime='300ms', samples_per_backend_workload=5,
+                      same_library_benchtime='500ms', same_library_samples=7,
+                      native_manifest=json.loads(Path('.native/manifest.json').read_text()),
+                      embed_manifest=json.loads(Path('.native/embed/manifest.json').read_text()))
+          Path('benchmarks/results/local-environment.json').write_text(json.dumps(info, indent=2)+'\n')
+          PY
+      - name: Same-library scalar executor and row reader comparisons
+        run: |
+          CGO_ENABLED=0 SQLITE_TEST_ROW_BRIDGE=1 SQLITE_TEST_EXEC_BRIDGE=1 \
+            SQLITE_TEST_LIBRARY="$BENCH_EMBED_DIR/libsqlite3.so" taskset -c "$BENCH_CPUSET" \
+            go test -run '^(TestScalarExecutorSelection|TestRowReaderSelection)$' \
+            -bench '^(BenchmarkScalarExec|BenchmarkRowReader)$' -benchmem \
+            -benchtime=500ms -count=7 -timeout 10m > benchmarks/results/local-matched-purego.txt
+      - name: Five native configurations with mattn and modernc controls
+        run: bash scripts/benchmark-all.sh -benchtime=300ms -count=5
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: full-benchmark
+          path: benchmarks/results/local-*
+          retention-days: 30
