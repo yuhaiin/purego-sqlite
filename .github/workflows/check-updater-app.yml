@@ -1,0 +1,26 @@
+name: Check updater App
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/**']
+    paths: ['.github/workflows/check-updater-app.yml']
+permissions:
+  contents: read
+jobs:
+  validate-app:
+    runs-on: ubuntu-24.04
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          client-id: ${{ vars.APP_ID || '1142630' }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Verify installation token repository scope
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          EXPECTED: ${{ github.repository }}
+        run: test "$(gh api installation/repositories --jq '.repositories[].full_name')" = "$EXPECTED"

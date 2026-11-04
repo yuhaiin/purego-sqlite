@@ -53,7 +53,7 @@ Backend selection happens at build time; imports, connectors and the registered
 
 | Build | Backend | SQLite engine |
 |---|---|---|
-| `CGO_ENABLED=1` on Linux/macOS/Windows/BSD | CGO | Bundled official SQLite 3.54.1, linked into the program |
+| `CGO_ENABLED=1` on Linux/macOS/Windows/BSD | CGO | Bundled official SQLite from [the source pin](scripts/source.json), linked into the program |
 | `CGO_ENABLED=0` on Linux/macOS/Windows amd64/arm64 | PureGo | Explicit, embedded or system shared library |
 | `CGO_ENABLED=0` on FreeBSD/NetBSD amd64/arm64 | PureGo | Shared library; extra compiler flag below |
 | `CGO_ENABLED=1 -tags sqlite_dynamic` | CGO | Explicit, embedded or system shared library; excludes bundled C source |
@@ -89,10 +89,32 @@ embedded DLL and never implicitly searches `PATH`.
 
 A normal CGO build compiles the pinned, unmodified official amalgamation in
 `internal/sqlite3` into the executable. It needs no SQLite shared library and
-performs no native extraction or runtime download. `scripts/vendor-sqlite.py`
-verifies source hashes; `--update` reimports the archive after checking both its
+performs no native extraction or runtime download. `go run ./internal/cmd/vendor-sqlite`
+verifies source hashes; `-update` reimports the archive after checking both its
 pinned SHA-256 and SQLite's SHA3-256. `LibraryPath()` identifies the default engine
-as `builtin:sqlite3-3.54.1`.
+as `builtin:sqlite3-<version>`.
+
+`go generate ./...` verifies the vendored source offline and regenerates the
+compiler-typed CGO trampolines from the tagged Go API. The generators, native
+fixture builder, source importer and stable-release checker use Go's standard
+library. The source pin is shared by the linked engine and native fixture builds.
+
+[Update SQLite source](.github/workflows/update-sqlite.yml) checks SQLite's
+official stable-release metadata daily. If the version is unchanged, it skips
+the archive download, native builds and PR publication. A newer release must
+pass the official SHA3-256, source/header version checks, linked CGO race tests
+and PureGo tests before `peter-evans/create-pull-request@v8` opens or updates
+`auto-update/sqlite-source`. The PR updates `sqlite3.c`, both headers, provenance
+hashes and the linked runtime version together; ordinary platform CI then runs.
+Updates never merge automatically. Manual dispatch supports `force` and a
+validation-only `publish=false` run.
+
+PR publication uses the same repository-scoped updater App as the embed
+repository: Actions variable `APP_ID` (default `1142630`), secret `PRIVATE_KEY`
+containing the complete PEM, and an App installation granting this repository
+Contents and Pull requests write permissions. The secret is needed only for PR
+publication. [Check updater App](.github/workflows/check-updater-app.yml) validates
+these credentials without compiling SQLite.
 
 Linking SQLite into the executable does not automatically make the C runtime
 static. For a fully static Linux program that runs on Alpine without a glibc
@@ -365,15 +387,15 @@ CGO-disabled builds or explicit shared-library selection. The two modules remain
 library does not add the prebuilt assets to your dependency graph.
 
 To build your own assets inside the driver repository, build the pinned
-**official SQLite 3.54.1 amalgamation** on each target:
+**official SQLite amalgamation pinned in [scripts/source.json](scripts/source.json)** on each target:
 
 ```sh
-python3 scripts/build-native.py --embed
+go run ./internal/cmd/build-native --embed
 CGO_ENABLED=0 go test -tags sqlite_bundle ./...
 CGO_ENABLED=0 go build -tags sqlite_bundle ./...
 ```
 
-Select `sqlite.WithBundled()` in the application. The script requires Python 3
+Select `sqlite.WithBundled()` in the application. The Go builder requires Go
 and a native C compiler (`cc` on Unix, `clang` plus Visual Studio tools on Windows).
 `CC` may override the compiler. It verifies both pinned SHA-256 and SQLite's
 published SHA3-256 before compiling. Generated platform-specific embed files and
@@ -403,7 +425,7 @@ licenses and check your platform C-runtime licensing when redistributing assets.
 ```sh
 CGO_ENABLED=0 go test ./...
 CGO_ENABLED=0 go vet ./...
-python3 scripts/build-native.py --embed
+go run ./internal/cmd/build-native --embed
 SQLITE_TEST_LIBRARY="$PWD/.native/libsqlite3.so" \
 SQLITE_TEST_EXTENSION="$PWD/.native/test_extension.so" \
 SQLITE_REQUIRE_FEATURES=1 CGO_ENABLED=0 go test ./...

@@ -1,7 +1,7 @@
 # Optional row-reader fixture
 
 `row.c` mirrors `bridge/row.c` in the companion purego-sqlite-embed repository.
-It is compiled only by `scripts/build-native.py --row-bridge`, never by a normal
+It is compiled only by `go run ./internal/cmd/build-native --row-bridge`, never by a normal
 driver build. Keep both copies identical when changing the versioned interface.
 
 The ABI is `int purego_sqlite_read_row_v1(sqlite3_stmt*, void*, int32_t, uint32_t)`.
