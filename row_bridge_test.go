@@ -89,7 +89,7 @@ func TestRowReaderValuesAndLifetime(t *testing.T) {
 			}
 			if fast {
 				// Invalid callers must fail before writing outside the output buffer.
-				if rc := api.ReadRow(r.(*rows).s.ptr, make([]ffi.RowValue, 6)); rc != 21 {
+				if rc := api.ReadRow(r.(*rows).s.ptr, nil); rc != 21 {
 					t.Fatalf("wrong column count returned %d, want SQLITE_MISUSE", rc)
 				}
 				calls = 0
@@ -171,6 +171,66 @@ func TestRowReaderErrorDoesNotRetry(t *testing.T) {
 	api.ReadRow = nil
 	if _, err := c.ExecContext(t.Context(), "SELECT 2", nil); err != nil {
 		t.Fatal("connection unusable after failed read", err)
+	}
+}
+
+func TestRowReaderScratchOwnership(t *testing.T) {
+	dc, err := testConnector(t, ":memory:").Connect(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer dc.Close()
+	c := dc.(*Conn)
+	api := *c.api
+	c.api = &api
+	if api.ReadRow == nil {
+		t.Skip("library has no optional row reader")
+	}
+	alloc, free := api.Malloc, api.Free
+	allocations, frees := 0, 0
+	api.Malloc = func(n int32) *byte { allocations++; return alloc(n) }
+	api.Free = func(p *byte) { frees++; free(p) }
+	for _, query := range []string{"SELECT 1", "SELECT 1,2,3", "SELECT 4,5", "SELECT 6,7,8,9", "SELECT 10"} {
+		r, err := c.QueryContext(t.Context(), query, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := r.Next(make([]driver.Value, len(r.Columns()))); err != nil {
+			t.Fatal(err)
+		}
+		if err := r.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if allocations != 3 || frees != 2 {
+		t.Fatalf("scratch was not reused/grown: allocations=%d frees=%d", allocations, frees)
+	}
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if frees != allocations || c.rowStorage != nil || c.rowValues != nil {
+		t.Fatal("connection close leaked native row scratch")
+	}
+}
+
+func TestRowReaderAllocationFailure(t *testing.T) {
+	dc, err := testConnector(t, ":memory:").Connect(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer dc.Close()
+	c := dc.(*Conn)
+	api := *c.api
+	c.api = &api
+	api.Malloc = func(int32) *byte { return nil }
+	api.ReadRow = func(uintptr, []ffi.RowValue) int32 { t.Fatal("read called after allocation failure"); return 0 }
+	r, err := c.QueryContext(t.Context(), "SELECT 1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = r.Next(make([]driver.Value, 1))
+	if e, ok := errors.AsType[*Error](err); !ok || e.Code != 7 || !r.(*rows).closed || c.rowStorage != nil {
+		t.Fatalf("allocation failure did not clean up: %v", err)
 	}
 }
 

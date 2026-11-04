@@ -3,7 +3,6 @@
 package ffi
 
 import (
-	"runtime"
 	"unsafe"
 
 	"github.com/ebitengine/purego"
@@ -15,10 +14,17 @@ func bindRow(a *API, h uintptr) {
 	if err != nil {
 		return
 	}
-	a.ReadRow = func(stmt uintptr, values []RowValue) int32 {
-		// Keep the Go address in SyscallN's uintptrescapes argument expression.
-		r, _, _ := purego.SyscallN(p, stmt, uintptr(unsafe.Pointer(unsafe.SliceData(values))), uintptr(len(values)), uintptr(rowValueSize))
-		runtime.KeepAlive(values)
-		return int32(r)
+	a.rowReader = func() func(uintptr, []RowValue) int32 {
+		// ForConnection creates a private call frame, protected by Conn.mu.
+		var args [4]uintptr
+		return func(stmt uintptr, values []RowValue) int32 {
+			// values borrows a SQLite allocation, never Go memory. This avoids
+			// both pinning Go buffers and allocating a variadic frame per row.
+			args = [4]uintptr{stmt, uintptr(unsafe.Pointer(unsafe.SliceData(values))), uintptr(len(values)), uintptr(rowValueSize)}
+			r, _, _ := purego.SyscallN(p, args[:]...)
+			args[1] = 0
+			return int32(r)
+		}
 	}
+	a.ReadRow = a.rowReader()
 }

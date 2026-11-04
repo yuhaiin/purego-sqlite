@@ -59,6 +59,7 @@ SIGNATURES = {
     "CompileOptionUsed": ("int", "const char*"),
     "CompileOptionGet": ("const char*", "int"),
     "Free": ("void", "void*"),
+    "Malloc": ("void*", "int"),
     "EnableLoadExtension": ("int", "sqlite3*,int"),
     "LoadExtension": ("int", "sqlite3*,const char*,const char*,char**"),
     "BackupInit": ("sqlite3_backup*", "sqlite3*,const char*,sqlite3*,const char*"),

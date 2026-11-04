@@ -15,7 +15,6 @@ type rows struct {
 	s                               *stmt
 	ctx                             context.Context
 	own, closed, pending, exhausted bool
-	values                          []ffi.RowValue
 }
 
 func (r *rows) Columns() []string {
@@ -97,13 +96,26 @@ func (r *rows) Next(dest []driver.Value) error {
 			return io.ErrShortBuffer
 		}
 		if a.ReadRow != nil {
-			if len(r.values) != len(dest) {
-				r.values = make([]ffi.RowValue, len(dest))
+			if len(c.rowValues) < len(dest) {
+				const size = int(unsafe.Sizeof(ffi.RowValue{}))
+				if len(dest) > math.MaxInt32/size {
+					return c.sqliteError(18) // SQLITE_TOOBIG.
+				}
+				p := a.Malloc(int32(len(dest) * size))
+				if p == nil {
+					return c.sqliteError(7) // SQLITE_NOMEM.
+				}
+				if c.rowStorage != nil {
+					a.Free(c.rowStorage)
+				}
+				c.rowStorage = p
+				c.rowValues = unsafe.Slice((*ffi.RowValue)(unsafe.Pointer(p)), len(dest))
 			}
-			if rc := a.ReadRow(s.ptr, r.values); rc != ffi.OK {
+			values := c.rowValues[:len(dest)]
+			if rc := a.ReadRow(s.ptr, values); rc != ffi.OK {
 				return c.sqliteError(rc)
 			}
-			for i, value := range r.values {
+			for i, value := range values {
 				switch value.Type {
 				case 1:
 					dest[i] = int64(value.Bits)

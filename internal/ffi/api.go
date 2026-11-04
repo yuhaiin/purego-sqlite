@@ -21,12 +21,14 @@ const (
 
 type API struct {
 	connection func() *API
+	rowReader  func() func(uintptr, []RowValue) int32
 	Path       string
 	// Exec drains rows and reads execution metadata before reset can change errors.
 	// ResetClear returns the reset status; clearing bindings must still run on error.
 	Exec       func(stmt, db uintptr, knownWrite bool) (rc int32, lastID, changes int64)
 	ResetClear func(uintptr) int32
-	// ReadRow is optional. Missing v1 symbols leave it nil for standard libraries.
+	// ReadRow is optional. Its output must be allocated by native Malloc, not Go.
+	// Missing v1 symbols leave it nil for standard libraries.
 	ReadRow             func(stmt uintptr, values []RowValue) int32
 	Open                func(string, *uintptr, int32, uintptr) int32                `sqlite:"sqlite3_open_v2"`
 	Close               func(uintptr) int32                                         `sqlite:"sqlite3_close"`
@@ -73,6 +75,7 @@ type API struct {
 	CompileOptionUsed   func(string) int32                                          `sqlite:"sqlite3_compileoption_used"`
 	CompileOptionGet    func(int32) string                                          `sqlite:"sqlite3_compileoption_get"`
 	Free                func(*byte)                                                 `sqlite:"sqlite3_free"`
+	Malloc              func(int32) *byte                                           `sqlite:"sqlite3_malloc"`
 	EnableLoadExtension func(uintptr, int32) int32                                  `sqlite:"sqlite3_enable_load_extension,optional"`
 	LoadExtension       func(uintptr, string, string, **byte) int32                 `sqlite:"sqlite3_load_extension,optional"`
 	// ConfigExtension is a platform-specialized call, never a general variadic binding.
@@ -120,7 +123,11 @@ func Load(path string) (*API, error) {
 // independent so cancellation can run concurrently with Step.
 func (a *API) ForConnection() *API {
 	if a.connection != nil {
-		return a.connection()
+		local := a.connection()
+		if a.rowReader != nil {
+			local.ReadRow = a.rowReader()
+		}
+		return local
 	}
 	return a
 }

@@ -307,6 +307,9 @@ reports availability. System SQLite and older prebuilts without this export
 continue through standard SQLite APIs. No custom export is required to open a
 database; a failed bridge read returns an error and is never silently retried.
 Native TEXT/BLOB buffers are copied before the next step/reset/finalize.
+The row output uses connection-owned SQLite memory (24 bytes per cached column),
+reused under the connection lock and freed on Close. Go buffers are never hidden
+inside a reusable native call frame.
 
 The companion's bridge is compiled alongside the unchanged SQLite amalgamation
 into the same shared library. Applications still support `CGO_ENABLED=0` and do
