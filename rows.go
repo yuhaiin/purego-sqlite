@@ -24,7 +24,17 @@ func (r *rows) Columns() []string {
 func (r *rows) ColumnTypeDatabaseTypeName(index int) string {
 	r.s.c.mu.Lock()
 	defer r.s.c.mu.Unlock()
-	name := strings.ToUpper(r.s.decltypes[index])
+	s := r.s
+	if r.closed || s.ptr == 0 || index < 0 || index >= len(s.columns) {
+		return ""
+	}
+	if s.decltypes == nil {
+		s.decltypes = make([]string, len(s.columns))
+		for i := range s.decltypes {
+			s.decltypes[i] = s.c.api.ColumnDecltype(s.ptr, int32(i))
+		}
+	}
+	name := strings.ToUpper(s.decltypes[index])
 	name, _, _ = strings.Cut(name, "(")
 	return strings.TrimSpace(name)
 }
@@ -48,8 +58,8 @@ func (r *rows) closeLocked() error {
 	if r.own {
 		return s.closeLocked()
 	}
-	rc := s.c.api.Reset(s.ptr)
-	s.c.api.ClearBindings(s.ptr)
+	rc := s.c.api.ResetClear(s.ptr)
+	s.boundBuffers = false
 	return s.c.sqliteError(rc)
 }
 func (r *rows) Next(dest []driver.Value) error {

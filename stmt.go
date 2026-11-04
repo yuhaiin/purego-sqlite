@@ -15,18 +15,32 @@ import (
 
 // stmt owns sqlite3_stmt*. The parent connection mutex protects its lifecycle.
 type stmt struct {
-	c         *Conn
-	ptr       uintptr
-	names     []string
-	columns   []string
-	decltypes []string
+	c            *Conn
+	ptr          uintptr
+	paramCount   int
+	boundBuffers bool
+	knownWrite   bool
+	names        []string
+	columns      []string
+	decltypes    []string
 }
 
 func (c *Conn) prepareLocked(query string) (*stmt, error) {
 	if strings.ContainsRune(query, 0) || len(query) >= math.MaxInt32 {
 		return nil, errors.New("sqlite: SQL contains NUL or exceeds C int length")
 	}
-	sql := append([]byte(query), 0)
+	var sql []byte
+	if n := len(query) + 1; n <= 4096 {
+		if cap(c.sqlbuf) < n {
+			c.sqlbuf = make([]byte, max(256, n))
+		}
+		sql = c.sqlbuf[:n]
+		copy(sql, query)
+		sql[len(query)] = 0
+	} else {
+		// Do not retain unusually large SQL in an idle pooled connection.
+		sql = append([]byte(query), 0)
+	}
 	var ptr uintptr
 	var tail *byte
 	rc := c.api.Prepare(c.db, &sql[0], int32(len(sql)), 0, &ptr, &tail)
@@ -45,14 +59,26 @@ func (c *Conn) prepareLocked(query string) (*stmt, error) {
 		c.api.Finalize(ptr)
 		return nil, ErrMultipleStatements
 	}
-	s := &stmt{c: c, ptr: ptr}
-	count := c.api.BindParameterCount(ptr)
-	s.names = make([]string, count)
-	for i := range s.names {
-		s.names[i] = c.api.BindParameterName(ptr, int32(i+1))
-	}
+	s := &stmt{c: c, ptr: ptr, paramCount: int(c.api.BindParameterCount(ptr)), knownWrite: hasDMLPrefix(query)}
 	c.stmts[s] = struct{}{}
 	return s, nil
+}
+
+// SQLite documents INSERT/UPDATE/DELETE as non-readonly even for no-op writes.
+// REPLACE is an INSERT alias. Only recognize an unquoted leading DML keyword;
+// CTEs, comments, PRAGMAs and EXPLAIN still use sqlite3_stmt_readonly at execution.
+// Keep general readonly checks native, including after automatic reprepare.
+func hasDMLPrefix(query string) bool {
+	query = strings.TrimLeft(query, " \t\r\n\f\v")
+	n := 0
+	for n < len(query) && (query[n] >= 'a' && query[n] <= 'z' || query[n] >= 'A' && query[n] <= 'Z') {
+		n++
+	}
+	if n < len(query) && (query[n] == '_' || query[n] == '$' || query[n] >= '0' && query[n] <= '9' || query[n] >= 0x80) {
+		return false
+	}
+	word := query[:n]
+	return strings.EqualFold(word, "INSERT") || strings.EqualFold(word, "UPDATE") || strings.EqualFold(word, "DELETE") || strings.EqualFold(word, "REPLACE")
 }
 func emptyTail(s string) bool {
 	for len(s) > 0 {
@@ -86,10 +112,10 @@ func emptyTail(s string) bool {
 func (s *stmt) refreshColumns() {
 	n := int(s.c.api.ColumnCount(s.ptr))
 	s.columns = make([]string, n)
-	s.decltypes = make([]string, n)
+	// Most callers only Scan values. Fetch declaration metadata on demand.
+	s.decltypes = nil
 	for i := range n {
 		s.columns[i] = s.c.api.ColumnName(s.ptr, int32(i))
-		s.decltypes[i] = s.c.api.ColumnDecltype(s.ptr, int32(i))
 	}
 }
 func (s *stmt) NumInput() int { return -1 } // bindLocked validates names and positional counts.
@@ -131,7 +157,7 @@ func (s *stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (drive
 		return nil, ErrClosed
 	}
 	var result driver.Result
-	err := c.runLocked(ctx, func() error { var err error; result, err = s.execLocked(args); return err })
+	err := c.runLocked(ctx, func() error { var err error; result, err = s.execLocked(args, true); return err })
 	return result, err
 }
 func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
@@ -156,9 +182,32 @@ func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 }
 
 func (s *stmt) bindLocked(args []driver.NamedValue) error {
-	// Every execution/rows close resets and clears bindings, including failures.
-	// A newly prepared statement starts clear. Do not duplicate those native calls.
-	bound := make([]bool, len(s.names))
+	// Every slot must be rebound and validated before Step. Payloads and failed
+	// executions clear bindings; scalar-only successes may retain scalar values.
+	positional := len(args) == s.paramCount
+	for i, v := range args {
+		if v.Name != "" || v.Ordinal != i+1 {
+			positional = false
+			break
+		}
+	}
+	if positional {
+		for i, v := range args {
+			if err := s.bindValue(int32(i+1), v.Value); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	// Parameter names are immutable SQL metadata, only needed for named
+	// arguments or detailed validation errors. Positional execution skips them.
+	if s.names == nil {
+		s.names = make([]string, s.paramCount)
+		for i := range s.names {
+			s.names[i] = s.c.api.BindParameterName(s.ptr, int32(i+1))
+		}
+	}
+	bound := make([]bool, s.paramCount)
 	for _, v := range args {
 		found := false
 		for i, name := range s.names {
@@ -206,6 +255,7 @@ func (s *stmt) bindValue(index int32, value any) error {
 		}
 		rc = a.BindInt64(s.ptr, index, n)
 	case string:
+		s.boundBuffers = true
 		if len(v) > math.MaxInt32 {
 			return errors.New("sqlite: TEXT exceeds C int length")
 		}
@@ -220,6 +270,7 @@ func (s *stmt) bindValue(index int32, value any) error {
 			rc = a.BindNull(s.ptr, index)
 			break
 		}
+		s.boundBuffers = true
 		if len(v) > math.MaxInt32 {
 			return errors.New("sqlite: BLOB exceeds C int length")
 		}
@@ -234,36 +285,34 @@ func (s *stmt) bindValue(index int32, value any) error {
 	}
 	return s.c.sqliteError(rc)
 }
-func (s *stmt) execLocked(args []driver.NamedValue) (driver.Result, error) {
-	defer func() { s.c.api.Reset(s.ptr); s.c.api.ClearBindings(s.ptr) }()
+func (s *stmt) execLocked(args []driver.NamedValue, reuse bool) (driver.Result, error) {
+	complete := false
+	if reuse {
+		defer func() {
+			// Scalar values own no native payload. A complete validated rebind is
+			// mandatory next time; failed binds/steps always clear all slots.
+			if complete && !s.boundBuffers {
+				s.c.api.Reset(s.ptr)
+			} else {
+				s.c.api.ResetClear(s.ptr)
+				s.boundBuffers = false
+			}
+		}()
+	} // One-shot callers finalize on every path, releasing bindings as well.
 	if err := s.bindLocked(args); err != nil {
 		return nil, err
 	}
-	for {
-		rc := s.c.api.Step(s.ptr)
-		if rc == ffi.Row {
-			continue
-		} // Exec drains RETURNING/SELECT; Query exposes rows.
-		if rc != ffi.Done {
-			return nil, s.c.sqliteError(rc)
-		}
-		break
+	rc, lastID, changes := s.c.api.Exec(s.ptr, s.c.db, s.knownWrite)
+	if rc != ffi.Done {
+		return nil, s.c.sqliteError(rc)
 	}
-	var changes int64
-	// sqlite3_changes retains the previous DML count for DDL/SELECT. Read-only
-	// statements affect zero rows; DDL behavior otherwise follows native SQLite.
-	if s.c.api.StmtReadonly(s.ptr) == 0 {
-		if s.c.api.Changes64 != nil {
-			changes = s.c.api.Changes64(s.c.db)
-		} else {
-			changes = int64(s.c.api.Changes(s.c.db))
-		}
-	}
-	return result{lastID: s.c.api.LastInsertRowid(s.c.db), changes: changes}, nil
+	complete = true
+	return result{lastID: lastID, changes: changes}, nil
 }
 func (s *stmt) queryLocked(ctx context.Context, args []driver.NamedValue, own bool) (*rows, error) {
 	if err := s.bindLocked(args); err != nil {
 		s.c.api.ClearBindings(s.ptr)
+		s.boundBuffers = false
 		return nil, err
 	}
 	// Step once before returning metadata: automatic schema reprepare can change
@@ -271,8 +320,8 @@ func (s *stmt) queryLocked(ctx context.Context, args []driver.NamedValue, own bo
 	rc := s.c.api.Step(s.ptr)
 	if rc != ffi.Row && rc != ffi.Done {
 		err := s.c.sqliteError(rc)
-		s.c.api.Reset(s.ptr)
-		s.c.api.ClearBindings(s.ptr)
+		s.c.api.ResetClear(s.ptr)
+		s.boundBuffers = false
 		return nil, err
 	}
 	s.refreshColumns()

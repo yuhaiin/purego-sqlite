@@ -387,24 +387,28 @@ WAL contention, backups and `PRAGMA integrity_check`.
 ## Performance and comparison
 
 [Benchmark methodology and measured results](benchmarks/README.md) include all
-15 requested categories (17 separate read/write cases), ns/op, B/op, allocs/op,
+15 requested categories (18 read/write and batching cases), ns/op, B/op, allocs/op,
 ops/s, relative timings, native source identity and compile options.
 
 ```sh
-scripts/benchmark.sh                  # PureGo vs mattn, five 200ms samples
-BENCH_BACKEND=cgo scripts/benchmark.sh # Default linked CGO vs mattn
+scripts/benchmark.sh                  # PureGo, mattn and modernc; five 200ms samples
+BENCH_BACKEND=cgo scripts/benchmark.sh # Linked CGO, mattn and modernc
+BENCH_BACKEND=cgo-dynamic scripts/benchmark.sh # Dynamic CGO, mattn and modernc
 scripts/benchmark.sh -benchtime=1x -count=1  # smoke only
 ```
 
-The comparison lives in its **own Go module**; mattn is a benchmark-only
-dependency, and CGO is used by mattn and by the default CGO backend. Same-engine checks compare
+The comparison lives in its **own Go module**; mattn and modernc.org/sqlite are
+benchmark-only dependencies. CGO is used by mattn and by the default CGO backend. Same-engine checks compare
 source IDs and all compile options; PureGo uses the same shared library, while
 the static CGO comparison resolves both drivers to the linked official engine,
 verified by source ID and compile-option equality. Results are workload- and
 machine-specific, and memory/storage-heavy work must be tested on deployment
-hardware. Reusing statements avoids prepare overhead. Integer-only hot FFI calls
-use PureGo's documented SyscallN API; floating point and native pointer conversion
-retain typed ABI bindings. No SQLite-owned buffer is cached beyond its lifetime.
+hardware. modernc uses its own Go translation and compile options, recorded
+separately in the logs. Reusing statements avoids prepare overhead. PureGo hot
+calls use the documented SyscallN API with a private scalar argument frame per
+connection; Go buffer arguments retain compiler lifetime tracking, and floating
+point retains typed ABI bindings. Native column data is copied before step or
+reset. CGO combines execution/result reads and reset/clear to reduce crossings.
 
 Compared with mattn, this driver removes the application's CGO build requirement
 on the six primary PureGo targets but still requires native-library deployment.

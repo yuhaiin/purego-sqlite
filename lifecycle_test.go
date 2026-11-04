@@ -28,7 +28,7 @@ func TestCloseFinalizeDuringCancellation(t *testing.T) {
 		completed := make(chan error, 1)
 		go func() {
 			c.mu.Lock()
-			err := c.runLocked(ctx, func() error { close(entered); _, err := s.execLocked(nil); return err })
+			err := c.runLocked(ctx, func() error { close(entered); _, err := s.execLocked(nil, true); return err })
 			c.mu.Unlock()
 			completed <- err
 		}()

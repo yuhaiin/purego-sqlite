@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -14,14 +15,15 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	sqlite "github.com/yuhaiin/purego-sqlite"
+	_ "modernc.org/sqlite"
 )
 
-var drivers = []string{backendName, "mattn"}
+var drivers = []string{backendName, "mattn", "modernc"}
 
 func open(b testing.TB, implementation, path string, connections int) *sql.DB {
 	b.Helper()
 	var db *sql.DB
-	if implementation != "mattn" {
+	if implementation == backendName {
 		var opts []sqlite.Option
 		if lib := os.Getenv("BENCH_SQLITE_LIBRARY"); lib != "" {
 			opts = append(opts, sqlite.WithLibrary(lib))
@@ -39,13 +41,23 @@ func open(b testing.TB, implementation, path string, connections int) *sql.DB {
 			b.Fatal(err)
 		}
 		db = sql.OpenDB(c)
-	} else {
+	} else if implementation == "mattn" {
 		// mattn applies these options to EVERY physical connection.
 		var err error
 		db, err = sql.Open("sqlite3", "file:"+filepath.ToSlash(path)+"?_synchronous=NORMAL&_cache_size=-2000&_busy_timeout=5000")
 		if err != nil {
 			b.Fatal(err)
 		}
+	} else if implementation == "modernc" {
+		// _pragma is applied to every physical connection by modernc.
+		params := url.Values{"_pragma": {"synchronous(NORMAL)", "cache_size(-2000)", "busy_timeout(5000)"}}
+		var err error
+		db, err = sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?"+params.Encode())
+		if err != nil {
+			b.Fatal(err)
+		}
+	} else {
+		b.Fatalf("unknown implementation %q", implementation)
 	}
 	db.SetMaxOpenConns(connections)
 	db.SetMaxIdleConns(connections)
@@ -110,6 +122,7 @@ func BenchmarkSQLite(b *testing.B) {
 		{"OpenClose", benchOpenClose}, {"SelectConstant", benchConstant},
 		{"SingleInsert", benchInsert}, {"PreparedInsert", benchPreparedInsert},
 		{"BatchInsert1000", func(b *testing.B, d string) { benchBatch(b, d, 1000) }},
+		{"BatchInsert1000Values", benchBatchValues},
 		{"TransactionInsert100000", func(b *testing.B, d string) { benchBatch(b, d, 100000) }},
 		{"SingleRowSelect", benchSingleRow}, {"FullScan1000", benchScan}, {"IndexedLookup", benchIndexed},
 		{"LargeTextRead", func(b *testing.B, d string) { benchPayload(b, d, false, false) }},
@@ -199,6 +212,45 @@ func benchBatch(b *testing.B, d string, n int) {
 		}
 	}
 	b.ReportMetric(float64(n), "rows/op")
+	throughput(b)
+}
+
+// Keep the row-at-a-time transaction case above. This separately measures a
+// common batched SQL shape: 1000 bindings, one Step/result/reset per transaction.
+func benchBatchValues(b *testing.B, d string) {
+	db := setup(b, d, 1)
+	query := "INSERT INTO events(value) VALUES" + strings.TrimSuffix(strings.Repeat("(?),", 1000), ",")
+	args := make([]any, 1000)
+	for i := range args {
+		args[i] = int64(i)
+	}
+	for b.Loop() {
+		b.StopTimer()
+		exec(b, db, "DELETE FROM events")
+		b.StartTimer()
+		tx, err := db.Begin()
+		if err != nil {
+			b.Fatal(err)
+		}
+		s, err := tx.Prepare(query)
+		if err != nil {
+			b.Fatal(err)
+		}
+		result, err := s.Exec(args...)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if n, err := result.RowsAffected(); err != nil || n != 1000 {
+			b.Fatal(n, err)
+		}
+		if err := s.Close(); err != nil {
+			b.Fatal(err)
+		}
+		if err := tx.Commit(); err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.ReportMetric(1000, "rows/op")
 	throughput(b)
 }
 func benchSingleRow(b *testing.B, d string) {
@@ -364,11 +416,42 @@ func TestSameNativeSQLite(t *testing.T) {
 		r.Close()
 		slices.Sort(opts)
 		current := strings.Join(opts, ",")
-		if identity != "" && (identity != source || options != current) {
+		if d != "modernc" && identity != "" && (identity != source || options != current) {
 			t.Fatal("SQLite source/options differ; run with -tags libsqlite3 and the same shared library")
 		}
-		identity, options = source, current
+		if d != "modernc" {
+			identity, options = source, current
+		}
 		t.Logf("driver=%s Go=%s SQLite=%s source=%s compile_options=%s", d, runtime.Version(), version, source, current)
 		db.Close()
+	}
+}
+
+// Check the settings on all four simultaneously live physical connections,
+// including those created after WAL was enabled on the first connection.
+func TestConnectionSettings(t *testing.T) {
+	for _, d := range drivers {
+		t.Run(d, func(t *testing.T) {
+			db := open(t, d, filepath.Join(t.TempDir(), "settings.db"), 4)
+			defer db.Close()
+			exec(t, db, "PRAGMA journal_mode=WAL")
+			for range 4 {
+				c, err := db.Conn(t.Context())
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer c.Close()
+				for pragma, want := range map[string]int{"synchronous": 1, "cache_size": -2000, "busy_timeout": 5000} {
+					var got int
+					if err := c.QueryRowContext(t.Context(), "PRAGMA "+pragma).Scan(&got); err != nil || got != want {
+						t.Fatalf("%s=%d, want %d: %v", pragma, got, want, err)
+					}
+				}
+				var journal string
+				if err := c.QueryRowContext(t.Context(), "PRAGMA journal_mode").Scan(&journal); err != nil || journal != "wal" {
+					t.Fatal(journal, err)
+				}
+			}
+		})
 	}
 }

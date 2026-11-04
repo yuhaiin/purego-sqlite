@@ -265,7 +265,7 @@ func TestCancellationBeforeStepAndClose(t *testing.T) {
 		// Wait until the cancellation callback has had an opportunity to interrupt
 		// an idle connection, then start step. Repeated interrupts must still stop it.
 		time.Sleep(10 * time.Millisecond)
-		_, err := s.(*stmt).execLocked(nil)
+		_, err := s.(*stmt).execLocked(nil, true)
 		return err
 	})
 	c.mu.Unlock()
