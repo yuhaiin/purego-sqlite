@@ -23,6 +23,7 @@ LABELS = {
 ORDER = ("purego", "cgo-dynamic", "cgo-static", "cgo", "mattn", "modernc")
 results = defaultdict(lambda: defaultdict(list))
 references = defaultdict(lambda: defaultdict(list))
+modernc_references = defaultdict(lambda: defaultdict(list))
 for specification in sys.argv[1:]:
     backend, separator, path = specification.partition("=")
     if not separator:
@@ -43,10 +44,12 @@ for specification in sys.argv[1:]:
         for driver, rows in group.items():
             results[name][driver].extend(rows)
             references[name][driver].extend(group.get("mattn", []))
+            modernc_references[name][driver].extend(group.get("modernc", []))
 
 if not results:
     raise SystemExit("no benchmark data")
 drivers = [d for d in ORDER if any(d in group for group in results.values())]
+native = [d for d in drivers if d not in ("mattn", "modernc")]
 
 
 def median(name, driver, metric):
@@ -85,7 +88,24 @@ for title, metrics in (("Time: ns/op (ratio to matching-run mattn)", ("ns/op",))
         print("| " + name + " | " + " | ".join(values) + " |")
     print()
 
-native = [d for d in drivers if d not in ("mattn", "modernc")]
+if any(modernc_references[name][d] for name in results for d in native):
+    print("### Native time / matching-run modernc\n")
+    print("Each cell shows the time ratio and matching modernc median in ns/op; lower ratios are better.\n")
+    print("| Workload | " + " | ".join(LABELS[d] for d in native) + " |")
+    print("|---|" + "---:|" * len(native))
+    for name in results:
+        values = []
+        for driver in native:
+            controls = modernc_references[name][driver]
+            current = median(name, driver, "ns/op")
+            if not controls or current is None:
+                values.append("—")
+                continue
+            reference = statistics.median(row['ns/op'] for row in controls)
+            values.append(f"{current/reference:.2f}x ({reference:,.0f})")
+        print("| " + name + " | " + " | ".join(values) + " |")
+    print()
+
 if len(native) > 1 and any(references[name][d] for name in results for d in native):
     print("### Matching mattn controls: ns/op\n")
     print("These medians are the denominators for the native backend ratios above.\n")

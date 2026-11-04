@@ -387,7 +387,7 @@ WAL contention, backups and `PRAGMA integrity_check`.
 ## Performance and comparison
 
 [Benchmark methodology and measured results](benchmarks/README.md) include all
-15 requested categories (17 separate read/write cases), ns/op, B/op, allocs/op,
+15 requested categories (18 read/write and batching cases), ns/op, B/op, allocs/op,
 ops/s, relative timings, native source identity and compile options.
 
 ```sh
