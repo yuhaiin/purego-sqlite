@@ -157,6 +157,9 @@ return (const char*)((const char* (*)(int))fn)((int)p0);
 static void call_sqlite3_free(uintptr_t fn, void* p0) {
 ((void (*)(void*))fn)((void*)p0);
 }
+static void* call_sqlite3_malloc(uintptr_t fn, int p0) {
+return (void*)((void* (*)(int))fn)((int)p0);
+}
 static int call_sqlite3_enable_load_extension(uintptr_t fn, uintptr_t p0, int p1) {
 return (int)((int (*)(sqlite3*,int))fn)((sqlite3*)p0, (int)p1);
 }
@@ -420,6 +423,11 @@ func registerAPI(a *API, _ any, name string, symbol uintptr) {
 	case "sqlite3_free":
 		a.Free = func(p0 *byte) {
 			C.call_sqlite3_free(C.uintptr_t(symbol), unsafe.Pointer(p0))
+		}
+	case "sqlite3_malloc":
+		a.Malloc = func(p0 int32) *byte {
+			r := C.call_sqlite3_malloc(C.uintptr_t(symbol), C.int(p0))
+			return (*byte)(unsafe.Pointer(r))
 		}
 	case "sqlite3_enable_load_extension":
 		a.EnableLoadExtension = func(p0 uintptr, p1 int32) int32 {

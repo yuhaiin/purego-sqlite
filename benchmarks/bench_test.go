@@ -391,6 +391,19 @@ func benchJSON(b *testing.B, d string) {
 
 // Never compare two different SQLite engines/configurations by accident.
 func TestSameNativeSQLite(t *testing.T) {
+	var nativeOptions []sqlite.Option
+	if path := os.Getenv("BENCH_SQLITE_LIBRARY"); path != "" {
+		nativeOptions = append(nativeOptions, sqlite.WithLibrary(path))
+	}
+	connector, err := sqlite.NewConnector(":memory:", nativeOptions...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rowReader, err := connector.HasFeature("row_read_v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("native library=%s row_read_v1=%v", connector.LibraryPath(), rowReader)
 	var identity, options string
 	for _, d := range drivers {
 		db := open(t, d, filepath.Join(t.TempDir(), "identity.db"), 1)

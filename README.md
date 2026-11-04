@@ -300,6 +300,22 @@ SQLite's other checkpoint modes); no Go hook API is claimed.
 
 ## Optional embedded SQLite
 
+Prebuilt libraries can optionally export `purego_sqlite_read_row_v1`. The driver
+detects this versioned interface once when loading each library and reads all
+columns of a row in one native call. `connector.HasFeature("row_read_v1")`
+reports availability. System SQLite and older prebuilts without this export
+continue through standard SQLite APIs. No custom export is required to open a
+database; a failed bridge read returns an error and is never silently retried.
+Native TEXT/BLOB buffers are copied before the next step/reset/finalize.
+The row output uses connection-owned SQLite memory (24 bytes per cached column),
+reused under the connection lock and freed on Close. Go buffers are never hidden
+inside a reusable native call frame.
+
+The companion's bridge is compiled alongside the unchanged SQLite amalgamation
+into the same shared library. Applications still support `CGO_ENABLED=0` and do
+not need an additional helper library. The linked CGO engine continues to use
+standard APIs unless an explicitly selected library provides the bridge.
+
 For committed prebuilt binaries, use the companion
 [purego-sqlite-embed](https://github.com/yuhaiin/purego-sqlite-embed) module:
 
@@ -409,6 +425,14 @@ calls use the documented SyscallN API with a private scalar argument frame per
 connection; Go buffer arguments retain compiler lifetime tracking, and floating
 point retains typed ABI bindings. Native column data is copied before step or
 reset. CGO combines execution/result reads and reset/clear to reduce crossings.
+
+With a compatible embed prebuilt, the optional row reader reduces the
+three-column scan to two native calls per row. A same-library, CGO-disabled
+comparison reduces FullScan1000 time by about 40%, with the same Go allocation
+count. The published prebuilt run takes about 0.713ms, versus matching mattn
+0.605ms and modernc 0.591ms. The benchmark README includes complete five-way
+tables for both standard libraries and the optional bridge; the bridge does not
+make every workload faster than modernc.
 
 Compared with mattn, this driver removes the application's CGO build requirement
 on the six primary PureGo targets but still requires native-library deployment.

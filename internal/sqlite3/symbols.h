@@ -45,6 +45,7 @@ static uintptr_t linked_symbol(const char *name) {
  if (!strcmp(name, "sqlite3_compileoption_used")) return (uintptr_t)&sqlite3_compileoption_used;
  if (!strcmp(name, "sqlite3_compileoption_get")) return (uintptr_t)&sqlite3_compileoption_get;
  if (!strcmp(name, "sqlite3_free")) return (uintptr_t)&sqlite3_free;
+ if (!strcmp(name, "sqlite3_malloc")) return (uintptr_t)&sqlite3_malloc;
  if (!strcmp(name, "sqlite3_enable_load_extension")) return (uintptr_t)&sqlite3_enable_load_extension;
  if (!strcmp(name, "sqlite3_load_extension")) return (uintptr_t)&sqlite3_load_extension;
  if (!strcmp(name, "sqlite3_backup_init")) return (uintptr_t)&sqlite3_backup_init;

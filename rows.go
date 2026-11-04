@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"io"
+	"math"
 	"strings"
 	"unsafe"
 
@@ -93,6 +94,44 @@ func (r *rows) Next(dest []driver.Value) error {
 
 		if len(dest) != len(s.columns) {
 			return io.ErrShortBuffer
+		}
+		if a.ReadRow != nil {
+			if len(c.rowValues) < len(dest) {
+				const size = int(unsafe.Sizeof(ffi.RowValue{}))
+				if len(dest) > math.MaxInt32/size {
+					return c.sqliteError(18) // SQLITE_TOOBIG.
+				}
+				p := a.Malloc(int32(len(dest) * size))
+				if p == nil {
+					return c.sqliteError(7) // SQLITE_NOMEM.
+				}
+				if c.rowStorage != nil {
+					a.Free(c.rowStorage)
+				}
+				c.rowStorage = p
+				c.rowValues = unsafe.Slice((*ffi.RowValue)(unsafe.Pointer(p)), len(dest))
+			}
+			values := c.rowValues[:len(dest)]
+			if rc := a.ReadRow(s.ptr, values); rc != ffi.OK {
+				return c.sqliteError(rc)
+			}
+			for i, value := range values {
+				switch value.Type {
+				case 1:
+					dest[i] = int64(value.Bits)
+				case 2:
+					dest[i] = math.Float64frombits(value.Bits)
+				case 3:
+					dest[i] = string(unsafe.Slice(value.Pointer(), int(value.Size)))
+				case 4:
+					data := make([]byte, int(value.Size))
+					copy(data, unsafe.Slice(value.Pointer(), int(value.Size)))
+					dest[i] = data
+				case 5:
+					dest[i] = nil
+				}
+			}
+			return nil
 		}
 		for i := range dest {
 			col := int32(i)

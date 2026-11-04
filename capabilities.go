@@ -68,6 +68,8 @@ func (c *Connector) HasFeature(name string) (bool, error) {
 		query = "SELECT * FROM dbstat LIMIT 0"
 	case "extensions":
 		return c.api.ConfigExtension != nil && c.api.LoadExtension != nil && c.api.EnableLoadExtension != nil, nil
+	case "row_read_v1":
+		return c.api.ReadRow != nil, nil
 	default:
 		return false, fmt.Errorf("%w: unknown feature %q", ErrUnsupported, name)
 	}
