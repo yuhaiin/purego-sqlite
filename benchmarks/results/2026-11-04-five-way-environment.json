@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-04",
+  "implementation_commit": "612ecc244dfd787508618f02d64f367542519bd8",
+  "go": "go version go1.27.3-X:nodwarf5 linux/amd64",
+  "platform": "Linux-7.2.6-zen2-1-zen-x86_64-with-glibc2.44",
+  "cpu": "AMD Ryzen 5 5600G with Radeon Graphics",
+  "gomaxprocs": 4,
+  "benchtime": "300ms",
+  "samples_per_backend_workload": 5,
+  "pooled_control_samples_per_workload": 15,
+  "filesystem": "tmpfs",
+  "mattn": "v1.14.52",
+  "modernc.org/sqlite": "v1.61.1",
+  "purego": "v0.11.3",
+  "native_manifest": {
+    "sqlite": "3.54.1",
+    "source": "https://www.sqlite.org/2026/sqlite-amalgamation-3540100.zip",
+    "source_sha256": "0a9c8e34352dad46006aa82836d5383bff9dc6bc9ce5a60553c05aa30e6ad1f9",
+    "source_sha3_256": "92281c86e2957f9b9305890f9ac04204caa7b677cc868dc326d942689df28e30",
+    "library_sha256": "85594a31507c58e3d8286c41a82b6598ccaa80d53b618d6a0011ebbd59de8d09",
+    "goos": "linux",
+    "goarch": "amd64",
+    "flags": [
+      "-DSQLITE_THREADSAFE=1",
+      "-DSQLITE_ENABLE_FTS5",
+      "-DSQLITE_ENABLE_RTREE",
+      "-DSQLITE_ENABLE_DBSTAT_VTAB",
+      "-DSQLITE_ENABLE_MATH_FUNCTIONS",
+      "-DSQLITE_USE_URI=1"
+    ],
+    "compiler": "cc (GCC) 16.2.1 20260810"
+  },
+  "runs": [
+    {
+      "backend": "purego",
+      "command": "BENCH_BACKEND=purego scripts/benchmark.sh -benchtime=300ms -count=5",
+      "CGO_ENABLED": 1,
+      "tags": "libsqlite3,sqlite_purego",
+      "raw": "2026-11-04-optimized-purego-linux-amd64.txt"
+    },
+    {
+      "backend": "cgo-dynamic",
+      "command": "BENCH_BACKEND=cgo-dynamic scripts/benchmark.sh -benchtime=300ms -count=5",
+      "CGO_ENABLED": 1,
+      "tags": "libsqlite3,sqlite_dynamic",
+      "raw": "2026-11-04-optimized-cgo-dynamic-linux-amd64.txt"
+    },
+    {
+      "backend": "cgo",
+      "command": "BENCH_BACKEND=cgo scripts/benchmark.sh -benchtime=300ms -count=5",
+      "CGO_ENABLED": 1,
+      "tags": "libsqlite3",
+      "raw": "2026-11-04-optimized-cgo-linux-amd64.txt"
+    }
+  ],
+  "notes": [
+    "Runs execute sequentially. No other agent-driven compilation or test runs overlap timing.",
+    "mattn and modernc columns pool controls across three executables (15 samples each); each native time ratio uses its own run's matching mattn median.",
+    "CGO static means the SQLite engine is linked into the executable, not a fully static libc/musl executable.",
+    "PureGo is forced with sqlite_purego because mattn requires CGO in the benchmark executable.",
+    "modernc reports the same SQLite 3.54.1 source ID, with different compile options; it is not the same native binary.",
+    "No CPU affinity, frequency lock, background-load isolation or confidence intervals. Go heap metrics exclude some engine allocations.",
+    "The repeated PureGo run still has a late JSON control slowdown: PureGo median 11904ns, matching mattn 8360ns, pooled mattn 4435ns. Raw values are retained; ratios use matching controls."
+  ],
+  "exploratory_run": {
+    "raw": "2026-11-04-exploratory-purego-linux-amd64.txt",
+    "excluded_from_combined_table": true,
+    "reason": "Native and modernc controls both slowed during the initial full PureGo run (scans and large payloads). The complete PureGo run was repeated with identical settings; the initial log is retained for inspection. Control pooling uses only the three selected raw logs."
+  }
+}

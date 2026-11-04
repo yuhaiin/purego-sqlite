@@ -164,6 +164,7 @@ jobs:
           cp benchmarks/results/local-raw.txt benchmarks/results/local-cgo.txt
           BENCH_BACKEND=cgo-dynamic scripts/benchmark.sh -benchtime=1x -count=1
           cp benchmarks/results/local-raw.txt benchmarks/results/local-cgo-dynamic.txt
+          python3 benchmarks/compare.py purego=benchmarks/results/local-purego.txt cgo=benchmarks/results/local-cgo.txt cgo-dynamic=benchmarks/results/local-cgo-dynamic.txt > benchmarks/results/local-five-way.md
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
