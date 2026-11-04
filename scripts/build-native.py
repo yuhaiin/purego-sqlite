@@ -36,6 +36,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--embed", action="store_true")
     parser.add_argument("--row-bridge", action="store_true", help="include the optional embed row-reader test fixture")
+    parser.add_argument("--exec-bridge", action="store_true", help="include the optional embed scalar-execution test fixture")
     parser.add_argument("--goos", help="target GOOS (defaults to go env GOOS)")
     parser.add_argument("--goarch", help="target GOARCH (defaults to go env GOARCH)")
     parser.add_argument("--output", type=Path, default=ROOT / ".native")
@@ -70,8 +71,12 @@ def main():
     libs = ["-lm", "-lpthread", "-ldl"] if goos == "linux" else ([] if goos == "windows" else ["-lm", "-lpthread"])
     flags = FLAGS + (["-DSQLITE_API=__declspec(dllexport)"] if goos == "windows" else [])
     bridge = []
-    if args.row_bridge:
-        bridge = ["-I" + str(source), str(ROOT / "tests/testdata/row.c")]
+    if args.row_bridge or args.exec_bridge:
+        bridge = ["-I" + str(source)]
+        if args.row_bridge:
+            bridge += [str(ROOT / "tests/testdata/row.c")]
+        if args.exec_bridge:
+            bridge += [str(ROOT / "tests/testdata/exec.c")]
         if goos in ("linux", "freebsd"):
             bridge += ["-Wl,-Bsymbolic"]
     run(compiler + common + flags + [str(source / "sqlite3.c")] + bridge + ["-o", str(out / filename)] + libs)
@@ -80,6 +85,7 @@ def main():
     manifest = {"sqlite": VERSION, "source": URL, "source_sha256": SHA256,
                 "source_sha3_256": SHA3_256, "library_sha256": digest,
                 "goos": goos, "goarch": arch, "flags": flags, "row_bridge_abi": 1 if args.row_bridge else 0,
+                "exec_bridge_abi": 1 if args.exec_bridge else 0,
                 "compiler": subprocess.check_output(compiler + ["--version"], text=True).splitlines()[0]}
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     if args.embed:

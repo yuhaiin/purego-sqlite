@@ -15,16 +15,18 @@ import (
 // Its mutex serializes native access except sqlite3_interrupt. Each native call
 // stops and joins its cancellation callback before releasing that mutex.
 type Conn struct {
-	mu         sync.Mutex
-	api        *ffi.API
-	cfg        config
-	db         uintptr
-	stmts      map[*stmt]struct{}
-	sqlbuf     []byte // Conn.mu protects a bounded prepare buffer; SQLite copies SQL.
-	rowStorage *byte  // Native output scratch, owned until Close, protected by mu.
-	rowValues  []ffi.RowValue
-	active     *rows
-	tx         *transaction
+	mu          sync.Mutex
+	api         *ffi.API
+	cfg         config
+	db          uintptr
+	stmts       map[*stmt]struct{}
+	sqlbuf      []byte // Conn.mu protects a bounded prepare buffer; SQLite copies SQL.
+	rowStorage  *byte  // Native output scratch, owned until Close, protected by mu.
+	rowValues   []ffi.RowValue
+	execStorage *byte // Native scalar execution scratch, protected by mu.
+	execFrame   []uint64
+	active      *rows
+	tx          *transaction
 }
 
 func (c *Conn) sqliteError(rc int32) error {
@@ -113,6 +115,11 @@ func (c *Conn) Close() error {
 		c.api.Free(c.rowStorage)
 		c.rowStorage = nil
 		c.rowValues = nil
+	}
+	if c.execStorage != nil {
+		c.api.Free(c.execStorage)
+		c.execStorage = nil
+		c.execFrame = nil
 	}
 	return nil
 }

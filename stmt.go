@@ -286,6 +286,9 @@ func (s *stmt) bindValue(index int32, value any) error {
 	return s.c.sqliteError(rc)
 }
 func (s *stmt) execLocked(args []driver.NamedValue, reuse bool) (driver.Result, error) {
+	if s.c.api.ExecScalar != nil && s.scalarArgs(args) {
+		return s.execScalarLocked(args)
+	}
 	complete := false
 	if reuse {
 		defer func() {
