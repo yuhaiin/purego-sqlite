@@ -1,0 +1,20 @@
+goos: linux
+goarch: amd64
+pkg: github.com/yuhaiin/purego-sqlite
+cpu: AMD Ryzen 5 5600G with Radeon Graphics
+BenchmarkRowReader/standard-4         	     501	   1206247 ns/op	      1000 rows/op	   82503 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4         	     493	   1208411 ns/op	      1000 rows/op	   82504 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4         	     492	   1207029 ns/op	      1000 rows/op	   82504 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4         	     498	   1209618 ns/op	      1000 rows/op	   82504 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4         	     487	   1207152 ns/op	      1000 rows/op	   82504 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4         	     490	   1203609 ns/op	      1000 rows/op	   82503 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4         	     496	   1197857 ns/op	      1000 rows/op	   82502 B/op	    7304 allocs/op
+BenchmarkRowReader/bridge-4           	     822	    724053 ns/op	      1000 rows/op	  114590 B/op	    8305 allocs/op
+BenchmarkRowReader/bridge-4           	     834	    729096 ns/op	      1000 rows/op	  114591 B/op	    8305 allocs/op
+BenchmarkRowReader/bridge-4           	     782	    738743 ns/op	      1000 rows/op	  114589 B/op	    8305 allocs/op
+BenchmarkRowReader/bridge-4           	     822	    724735 ns/op	      1000 rows/op	  114597 B/op	    8305 allocs/op
+BenchmarkRowReader/bridge-4           	     828	    723989 ns/op	      1000 rows/op	  114589 B/op	    8305 allocs/op
+BenchmarkRowReader/bridge-4           	     812	    725435 ns/op	      1000 rows/op	  114589 B/op	    8305 allocs/op
+BenchmarkRowReader/bridge-4           	     822	    722748 ns/op	      1000 rows/op	  114590 B/op	    8305 allocs/op
+PASS
+ok  	github.com/yuhaiin/purego-sqlite	8.351s

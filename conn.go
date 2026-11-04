@@ -39,6 +39,8 @@ func (c *Conn) sqliteError(rc int32) error {
 	}
 	if extended&255 != rc&255 {
 		extended = rc
+		// Allocation/bridge failures need not update this connection's error.
+		message = c.api.Errstr(rc)
 	}
 	return &Error{Code: int(rc & 255), ExtendedCode: int(extended), Message: message}
 }

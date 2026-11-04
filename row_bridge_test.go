@@ -229,7 +229,7 @@ func TestRowReaderAllocationFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = r.Next(make([]driver.Value, 1))
-	if e, ok := errors.AsType[*Error](err); !ok || e.Code != 7 || !r.(*rows).closed || c.rowStorage != nil {
+	if e, ok := errors.AsType[*Error](err); !ok || e.Code != 7 || e.Message != api.Errstr(7) || !r.(*rows).closed || c.rowStorage != nil {
 		t.Fatalf("allocation failure did not clean up: %v", err)
 	}
 }

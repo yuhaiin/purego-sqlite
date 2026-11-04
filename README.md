@@ -426,6 +426,14 @@ connection; Go buffer arguments retain compiler lifetime tracking, and floating
 point retains typed ABI bindings. Native column data is copied before step or
 reset. CGO combines execution/result reads and reset/clear to reduce crossings.
 
+With a compatible embed prebuilt, the optional row reader reduces the
+three-column scan to two native calls per row. A same-library, CGO-disabled
+comparison reduces FullScan1000 time by about 40%, with the same Go allocation
+count. The published prebuilt run takes about 0.713ms, versus matching mattn
+0.605ms and modernc 0.591ms. The benchmark README includes complete five-way
+tables for both standard libraries and the optional bridge; the bridge does not
+make every workload faster than modernc.
+
 Compared with mattn, this driver removes the application's CGO build requirement
 on the six primary PureGo targets but still requires native-library deployment.
 CGO builds add a statically linked official SQLite engine. mattn has a much longer production
