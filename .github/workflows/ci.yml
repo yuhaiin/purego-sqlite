@@ -156,12 +156,14 @@ jobs:
           go-version: '1.27.3'
           cache-dependency-path: benchmarks/go.sum
       - run: python3 scripts/build-native.py
-      - name: Same-engine PureGo and CGO mattn comparisons
+      - name: PureGo, static and dynamic CGO, mattn and modernc comparisons
         run: |
           scripts/benchmark.sh -benchtime=1x -count=1
           cp benchmarks/results/local-raw.txt benchmarks/results/local-purego.txt
           BENCH_BACKEND=cgo scripts/benchmark.sh -benchtime=1x -count=1
           cp benchmarks/results/local-raw.txt benchmarks/results/local-cgo.txt
+          BENCH_BACKEND=cgo-dynamic scripts/benchmark.sh -benchtime=1x -count=1
+          cp benchmarks/results/local-raw.txt benchmarks/results/local-cgo-dynamic.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:

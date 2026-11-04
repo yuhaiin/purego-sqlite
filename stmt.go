@@ -158,6 +158,21 @@ func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 func (s *stmt) bindLocked(args []driver.NamedValue) error {
 	// Every execution/rows close resets and clears bindings, including failures.
 	// A newly prepared statement starts clear. Do not duplicate those native calls.
+	positional := len(args) == len(s.names)
+	for i, v := range args {
+		if v.Name != "" || v.Ordinal != i+1 {
+			positional = false
+			break
+		}
+	}
+	if positional {
+		for i, v := range args {
+			if err := s.bindValue(int32(i+1), v.Value); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	bound := make([]bool, len(s.names))
 	for _, v := range args {
 		found := false
@@ -235,31 +250,15 @@ func (s *stmt) bindValue(index int32, value any) error {
 	return s.c.sqliteError(rc)
 }
 func (s *stmt) execLocked(args []driver.NamedValue) (driver.Result, error) {
-	defer func() { s.c.api.Reset(s.ptr); s.c.api.ClearBindings(s.ptr) }()
+	defer s.c.api.ResetClear(s.ptr)
 	if err := s.bindLocked(args); err != nil {
 		return nil, err
 	}
-	for {
-		rc := s.c.api.Step(s.ptr)
-		if rc == ffi.Row {
-			continue
-		} // Exec drains RETURNING/SELECT; Query exposes rows.
-		if rc != ffi.Done {
-			return nil, s.c.sqliteError(rc)
-		}
-		break
+	rc, lastID, changes := s.c.api.Exec(s.ptr, s.c.db)
+	if rc != ffi.Done {
+		return nil, s.c.sqliteError(rc)
 	}
-	var changes int64
-	// sqlite3_changes retains the previous DML count for DDL/SELECT. Read-only
-	// statements affect zero rows; DDL behavior otherwise follows native SQLite.
-	if s.c.api.StmtReadonly(s.ptr) == 0 {
-		if s.c.api.Changes64 != nil {
-			changes = s.c.api.Changes64(s.c.db)
-		} else {
-			changes = int64(s.c.api.Changes(s.c.db))
-		}
-	}
-	return result{lastID: s.c.api.LastInsertRowid(s.c.db), changes: changes}, nil
+	return result{lastID: lastID, changes: changes}, nil
 }
 func (s *stmt) queryLocked(ctx context.Context, args []driver.NamedValue, own bool) (*rows, error) {
 	if err := s.bindLocked(args); err != nil {
@@ -271,8 +270,7 @@ func (s *stmt) queryLocked(ctx context.Context, args []driver.NamedValue, own bo
 	rc := s.c.api.Step(s.ptr)
 	if rc != ffi.Row && rc != ffi.Done {
 		err := s.c.sqliteError(rc)
-		s.c.api.Reset(s.ptr)
-		s.c.api.ClearBindings(s.ptr)
+		s.c.api.ResetClear(s.ptr)
 		return nil, err
 	}
 	s.refreshColumns()

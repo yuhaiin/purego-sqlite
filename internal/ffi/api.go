@@ -20,7 +20,12 @@ const (
 )
 
 type API struct {
-	Path                string
+	connection func() *API
+	Path       string
+	// Exec drains rows and reads execution metadata before reset can change errors.
+	// ResetClear returns the reset status; clearing bindings must still run on error.
+	Exec                func(stmt, db uintptr) (rc int32, lastID, changes int64)
+	ResetClear          func(uintptr) int32
 	Open                func(string, *uintptr, int32, uintptr) int32                `sqlite:"sqlite3_open_v2"`
 	Close               func(uintptr) int32                                         `sqlite:"sqlite3_close"`
 	Errmsg              func(uintptr) string                                        `sqlite:"sqlite3_errmsg"`
@@ -100,10 +105,44 @@ func Load(path string) (*API, error) {
 		_ = loader.Close(h)
 		return nil, fmt.Errorf("sqlite: need SQLite >= 3.20.0 with THREADSAFE enabled (loaded %s)", version)
 	}
+	a.bindOperations()
 	bindFast(a, h)
 	a.ConfigExtension = extensionConfig(h)
 	libraries.apis[path] = a
 	return a, nil
+}
+
+// ForConnection gives the driver a private scalar call frame when the backend
+// supports it. Its hot calls require the owning Conn mutex; Interrupt remains
+// independent so cancellation can run concurrently with Step.
+func (a *API) ForConnection() *API {
+	if a.connection != nil {
+		return a.connection()
+	}
+	return a
+}
+
+func (a *API) bindOperations() {
+	a.Exec = func(stmt, db uintptr) (rc int32, lastID, changes int64) {
+		for rc = a.Step(stmt); rc == Row; rc = a.Step(stmt) {
+		}
+		if rc == Done {
+			if a.StmtReadonly(stmt) == 0 {
+				if a.Changes64 != nil {
+					changes = a.Changes64(db)
+				} else {
+					changes = int64(a.Changes(db))
+				}
+			}
+			lastID = a.LastInsertRowid(db)
+		}
+		return
+	}
+	a.ResetClear = func(stmt uintptr) int32 {
+		rc := a.Reset(stmt)
+		a.ClearBindings(stmt)
+		return rc
+	}
 }
 
 func bind(a *API, h uintptr) error {

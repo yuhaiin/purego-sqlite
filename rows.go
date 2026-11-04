@@ -48,8 +48,7 @@ func (r *rows) closeLocked() error {
 	if r.own {
 		return s.closeLocked()
 	}
-	rc := s.c.api.Reset(s.ptr)
-	s.c.api.ClearBindings(s.ptr)
+	rc := s.c.api.ResetClear(s.ptr)
 	return s.c.sqliteError(rc)
 }
 func (r *rows) Next(dest []driver.Value) error {

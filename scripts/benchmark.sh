@@ -19,9 +19,9 @@ esac
 export GOMAXPROCS="${GOMAXPROCS:-4}"
 cd "$repo_dir/benchmarks"
 mkdir -p results
-# -run validates SQLite source ID and compile options before timing anything.
+# -run checks native source/options and all drivers' per-connection settings.
 if (( $# == 0 )); then
   set -- -benchtime=200ms -count=5
 fi
-go test -tags "$bench_tags" -run TestSameNativeSQLite -v -bench . -benchmem -timeout 20m "$@" | tee results/local-raw.txt
-python3 compare.py results/local-raw.txt | tee results/local-summary.md
+go test -tags "$bench_tags" -run 'TestSameNativeSQLite|TestConnectionSettings' -v -bench . -benchmem -timeout 20m "$@" | tee results/local-raw.txt
+python3 compare.py "$bench_backend=results/local-raw.txt" | tee results/local-summary.md
