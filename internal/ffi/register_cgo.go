@@ -136,6 +136,9 @@ return (int)((int (*)(sqlite3*))fn)((sqlite3*)p0);
 static int call_sqlite3_busy_timeout(uintptr_t fn, uintptr_t p0, int p1) {
 return (int)((int (*)(sqlite3*,int))fn)((sqlite3*)p0, (int)p1);
 }
+static int call_sqlite3_limit(uintptr_t fn, uintptr_t p0, int p1, int p2) {
+return (int)((int (*)(sqlite3*,int,int))fn)((sqlite3*)p0, (int)p1, (int)p2);
+}
 static void call_sqlite3_interrupt(uintptr_t fn, uintptr_t p0) {
 ((void (*)(sqlite3*))fn)((sqlite3*)p0);
 }
@@ -387,6 +390,11 @@ func registerAPI(a *API, _ any, name string, symbol uintptr) {
 	case "sqlite3_busy_timeout":
 		a.BusyTimeout = func(p0 uintptr, p1 int32) int32 {
 			r := C.call_sqlite3_busy_timeout(C.uintptr_t(symbol), C.uintptr_t(p0), C.int(p1))
+			return int32(r)
+		}
+	case "sqlite3_limit":
+		a.Limit = func(p0 uintptr, p1 int32, p2 int32) int32 {
+			r := C.call_sqlite3_limit(C.uintptr_t(symbol), C.uintptr_t(p0), C.int(p1), C.int(p2))
 			return int32(r)
 		}
 	case "sqlite3_interrupt":

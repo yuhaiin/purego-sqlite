@@ -72,6 +72,7 @@ type API struct {
 	LastInsertRowid     func(uintptr) int64                                         `sqlite:"sqlite3_last_insert_rowid"`
 	Autocommit          func(uintptr) int32                                         `sqlite:"sqlite3_get_autocommit"`
 	BusyTimeout         func(uintptr, int32) int32                                  `sqlite:"sqlite3_busy_timeout"`
+	Limit               func(uintptr, int32, int32) int32                           `sqlite:"sqlite3_limit"`
 	Interrupt           func(uintptr)                                               `sqlite:"sqlite3_interrupt"`
 	Libversion          func() string                                               `sqlite:"sqlite3_libversion"`
 	LibversionNumber    func() int32                                                `sqlite:"sqlite3_libversion_number"`

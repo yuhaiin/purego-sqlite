@@ -298,6 +298,17 @@ file. Destination locks return a native busy/locked error; retry at the applicat
 level. Checkpoints are available through `PRAGMA wal_checkpoint(PASSIVE)` (and
 SQLite's other checkpoint modes); no Go hook API is claimed.
 
+## Connection resource limits
+
+`Conn.SetLimit(category, value)` wraps the public `sqlite3_limit` interface for
+connection-local resource budgets. Use it in `WithInit` or `sql.Conn.Raw`, for
+example with `LimitLength`, `LimitSQLLength` and `LimitExprDepth` before reading
+untrusted snapshots. It returns the previous limit; negative values query without
+changing it. SQLite clamps increases to compiled maxima. Unsupported categories
+return `ErrUnsupported`; closed connections and active rows are rejected. Limits
+do not apply to other connections in a pool. Newer categories require a matching
+SQLite version.
+
 ## Optional embedded SQLite
 
 Prebuilt libraries can optionally export `purego_sqlite_read_row_v1`. The driver
