@@ -215,6 +215,133 @@ func TestScalarExecutorScratchAndNativeValidation(t *testing.T) {
 	}
 }
 
+func TestScalarExecutorApplicationWorkflow(t *testing.T) {
+	for _, fast := range []bool{false, true} {
+		t.Run(fmt.Sprint(fast), func(t *testing.T) {
+			connector := testConnector(t, filepath.Join(t.TempDir(), "app.db"), WithWAL(), WithInit(func(_ context.Context, c *Conn) error {
+				api := *c.api
+				if !fast {
+					api.ExecScalar = nil
+				}
+				c.api = &api
+				return nil
+			}))
+			if fast && connector.api.ExecScalar == nil {
+				t.Skip("library has no scalar executor")
+			}
+			db := sql.OpenDB(connector)
+			defer db.Close()
+			db.SetMaxOpenConns(1)
+			exec(t, db, "CREATE TABLE accounts(id INTEGER PRIMARY KEY, balance REAL CHECK(balance>=0), version INTEGER)")
+			exec(t, db, "CREATE TABLE audit(account, before, after)")
+			exec(t, db, "CREATE TRIGGER log_balance AFTER UPDATE ON accounts BEGIN INSERT INTO audit VALUES(new.id,old.balance,new.balance); END")
+			s, err := db.Prepare("INSERT INTO accounts VALUES(?,?,0) ON CONFLICT(id) DO UPDATE SET balance=excluded.balance, version=accounts.version+1 RETURNING version")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer s.Close()
+			for _, account := range []struct {
+				id      int64
+				balance float64
+			}{{17, 9.75}, {-43, 2.25}, {17, 12.5}} {
+				r, err := s.Exec(account.id, account.balance)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if n, _ := r.RowsAffected(); n != 1 {
+					t.Fatal("trigger affected row count", n)
+				}
+			}
+			// A transaction with UPDATE and DELETE must roll back both rows and triggers.
+			tx, err := db.Begin()
+			if err != nil {
+				t.Fatal(err)
+			}
+			exec(t, tx, "UPDATE accounts SET balance=balance+?,version=version+1 WHERE id=?", 4.25, int64(17))
+			exec(t, tx, "DELETE FROM accounts WHERE id=?", int64(-43))
+			if err := tx.Rollback(); err != nil {
+				t.Fatal(err)
+			}
+			var balance float64
+			var version, count int
+			if err := db.QueryRow("SELECT balance,version FROM accounts WHERE id=?", int64(17)).Scan(&balance, &version); err != nil || balance != 12.5 || version != 1 {
+				t.Fatal("rollback changed account", balance, version, err)
+			}
+			if err := db.QueryRow("SELECT count(*) FROM accounts").Scan(&count); err != nil || count != 2 {
+				t.Fatal("rollback lost account", count, err)
+			}
+			if err := db.QueryRow("SELECT count(*) FROM audit").Scan(&count); err != nil || count != 1 {
+				t.Fatal("rollback retained trigger writes", count, err)
+			}
+			update, err := db.Prepare("UPDATE accounts SET balance=balance+?,version=version+1 WHERE id=?")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer update.Close()
+			if _, err := update.Exec(-100.0, int64(17)); err == nil {
+				t.Fatal("CHECK constraint ignored")
+			}
+			r, err := update.Exec(0.75, int64(17))
+			if err != nil {
+				t.Fatal("update not reusable after failure", err)
+			}
+			if n, _ := r.RowsAffected(); n != 1 {
+				t.Fatal("incorrect update changes", n)
+			}
+			// Named and payload operations interleave with optimized writes.
+			exec(t, db, "UPDATE accounts SET balance=:balance WHERE id=:id", sql.Named("id", int64(-43)), sql.Named("balance", 5.5))
+			exec(t, db, "CREATE TABLE notes(account, text, payload)")
+			exec(t, db, "INSERT INTO notes VALUES(?,?,?)", int64(17), "订单\x00备注", []byte{0, 255, 7})
+			if err := db.QueryRow("SELECT balance,version FROM accounts WHERE id=?", int64(17)).Scan(&balance, &version); err != nil || balance != 13.25 || version != 2 {
+				t.Fatal("incorrect final account", balance, version, err)
+			}
+			if err := db.QueryRow("SELECT count(*) FROM audit").Scan(&count); err != nil || count != 3 {
+				t.Fatal("incorrect trigger writes", count, err)
+			}
+			integrity(t, db)
+		})
+	}
+}
+
+func TestScalarExecutorCancellation(t *testing.T) {
+	c := scalarTestConn(t)
+	if _, err := c.ExecContext(t.Context(), "CREATE TABLE t(v)", nil); err != nil {
+		t.Fatal(err)
+	}
+	s, err := c.PrepareContext(t.Context(), "WITH RECURSIVE seq(i) AS (VALUES(0) UNION ALL SELECT i+1 FROM seq WHERE i<?) INSERT INTO t SELECT i FROM seq")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	call, calls := c.api.ExecScalar, 0
+	c.api.ExecScalar = func(stmt uintptr, frame []uint64) int32 {
+		calls++
+		// Cancel after runLocked's initial context check. Its repeated interrupt
+		// must cover cancellation immediately before the native helper starts.
+		cancel()
+		return call(stmt, frame)
+	}
+	_, err = s.(*stmt).ExecContext(ctx, scalarArgs(int64(1_000_000_000)))
+	if !errors.Is(err, context.Canceled) || calls != 1 {
+		t.Fatal("helper cancellation/retry", err, calls)
+	}
+	c.api.ExecScalar = call
+	if _, err := s.(*stmt).ExecContext(t.Context(), scalarArgs(int64(2))); err != nil {
+		t.Fatal("interrupted statement not reusable", err)
+	}
+	r, err := c.QueryContext(t.Context(), "SELECT count(*) FROM t", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	values := make([]driver.Value, 1)
+	if err := r.Next(values); err != nil || values[0] != int64(3) {
+		t.Fatal("interrupted INSERT retained partial writes", values, err)
+	}
+}
+
 // BenchmarkScalarExec compares both paths using exactly the same loaded library.
 func BenchmarkScalarExec(b *testing.B) {
 	for _, workload := range []struct {
