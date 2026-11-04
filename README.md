@@ -156,11 +156,18 @@ instead. SQLite may automatically roll back an interrupted or conflicting
 transaction. Commit checks the actual native state; a failed commit attempts
 rollback before the connection can return to the pool.
 
-Each Prepare, Exec and Query accepts **exactly one statement**, with leading and
-trailing comments allowed. Multiple statements fail before the first executes;
-run scripts as separate calls, optionally inside a transaction. Empty/comment-only
-SQL and SQL containing NUL are rejected. Semicolons in string literals and
-triggers are parsed by SQLite. Exec drains result rows (including RETURNING);
+Prepare, Query and Exec with parameters accept **exactly one statement**, with
+leading and trailing comments allowed. They reject multiple statements before
+executing the first. Exec without parameters also accepts scripts, such as
+`PRAGMA busy_timeout=5000; PRAGMA trusted_schema=OFF`. SQLite parses statement
+boundaries, including semicolons inside string literals and trigger bodies.
+Scripts execute sequentially and stop at the first error or cancellation;
+earlier successful writes remain committed unless the caller uses a transaction.
+No transaction is added implicitly. Use `sql.Tx` for atomic scripts and explicit
+rollback on failure. Script results describe the last statement. Placeholders
+still require bindings, so a script reaching an unbound placeholder fails there.
+Empty/comment-only SQL and SQL containing NUL are rejected.
+Exec drains result rows (including RETURNING);
 use Query to read them. `RowsAffected` and `LastInsertId` follow native SQLite
 metadata (DDL may retain SQLite's previous changes count).
 
@@ -475,7 +482,7 @@ extensions are unavailable on Apple arm64's CGO-disabled PureGo backend; use
 CGO when needed. Embedded assets require a separate
 native build step and process-lifetime temp cleanup as described above. Busy
 waits and extension work may delay cancellation. There is no statement cache,
-no multi-result/multi-statement execution, no automatic date conversion and no
+no multiple result sets, no parameterized scripts, no automatic date conversion and no
 bundled third-party extension such as sqlite-vec. Validate workload correctness,
 performance and deployed native-library provenance before production adoption.
 

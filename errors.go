@@ -8,7 +8,7 @@ import (
 var (
 	ErrClosed             = errors.New("sqlite: object is closed")
 	ErrActiveRows         = errors.New("sqlite: close active rows before using the same physical connection")
-	ErrMultipleStatements = errors.New("sqlite: exactly one SQL statement is allowed per call; execute scripts as separate calls")
+	ErrMultipleStatements = errors.New("sqlite: multiple statements require an Exec call without parameters")
 	ErrExtensionDisabled  = errors.New("sqlite: extension loading requires WithExtensions")
 	ErrUnsupported        = errors.New("sqlite: unsupported capability")
 )

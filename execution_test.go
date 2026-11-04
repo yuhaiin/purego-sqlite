@@ -80,7 +80,7 @@ func TestPreparedSQLSurvivesLaterPreparation(t *testing.T) {
 			t.Fatal(got, err)
 		}
 	}
-	if _, err := db.Exec("SELECT 1; SELECT 2"); !errors.Is(err, ErrMultipleStatements) {
+	if _, err := db.Prepare("SELECT 1; SELECT 2"); !errors.Is(err, ErrMultipleStatements) {
 		t.Fatal(err)
 	}
 	// Force native automatic reprepare from SQLite's retained SQL copy after

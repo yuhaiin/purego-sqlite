@@ -26,8 +26,23 @@ type stmt struct {
 }
 
 func (c *Conn) prepareLocked(query string) (*stmt, error) {
+	s, tail, err := c.prepareNextLocked(query)
+	if err != nil {
+		return nil, err
+	}
+	if !emptyTail(tail) {
+		_ = s.closeLocked()
+		return nil, ErrMultipleStatements
+	}
+	return s, nil
+}
+
+// prepareNextLocked lets SQLite find the next statement boundary, including
+// semicolons inside trigger bodies and quoted values. The tail borrows query,
+// rather than sqlbuf, so preparing the next statement cannot overwrite it.
+func (c *Conn) prepareNextLocked(query string) (*stmt, string, error) {
 	if strings.ContainsRune(query, 0) || len(query) >= math.MaxInt32 {
-		return nil, errors.New("sqlite: SQL contains NUL or exceeds C int length")
+		return nil, "", errors.New("sqlite: SQL contains NUL or exceeds C int length")
 	}
 	var sql []byte
 	if n := len(query) + 1; n <= 4096 {
@@ -45,23 +60,21 @@ func (c *Conn) prepareLocked(query string) (*stmt, error) {
 	var tail *byte
 	rc := c.api.Prepare(c.db, &sql[0], int32(len(sql)), 0, &ptr, &tail)
 	if rc != ffi.OK {
-		return nil, c.sqliteError(rc)
+		return nil, "", c.sqliteError(rc)
 	}
 	// SQLite owns ptr; tail borrows sql and must be consumed before KeepAlive.
 	if ptr == 0 {
-		return nil, errors.New("sqlite: SQL contains no statement")
+		return nil, "", errors.New("sqlite: SQL contains no statement")
 	}
 	offset := int(uintptr(unsafe.Pointer(tail)) - uintptr(unsafe.Pointer(&sql[0])))
 	runtime.KeepAlive(sql)
-	// Only whitespace, semicolons and comments may follow. Parsing this lexical
-	// tail avoids executing or preparing a second statement with schema effects.
-	if offset < 0 || offset > len(query) || !emptyTail(query[offset:]) {
+	if offset <= 0 || offset > len(query) {
 		c.api.Finalize(ptr)
-		return nil, ErrMultipleStatements
+		return nil, "", errors.New("sqlite: invalid native SQL tail")
 	}
 	s := &stmt{c: c, ptr: ptr, paramCount: int(c.api.BindParameterCount(ptr)), knownWrite: hasDMLPrefix(query)}
 	c.stmts[s] = struct{}{}
-	return s, nil
+	return s, query[offset:], nil
 }
 
 // SQLite documents INSERT/UPDATE/DELETE as non-readonly even for no-op writes.
