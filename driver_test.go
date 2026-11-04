@@ -131,7 +131,7 @@ func TestParametersAndSQLHandling(t *testing.T) {
 		t.Fatalf("named: %d %d %d %v", a, b, c, err)
 	}
 	for _, q := range []string{"SELECT 1; SELECT 2", "SELECT 1; /*x*/ SELECT bad", "SELECT 1\x00; SELECT 2"} {
-		if _, err := db.Exec(q); err == nil {
+		if _, err := db.Query(q); err == nil {
 			t.Fatal("accepted trailing SQL", q)
 		}
 	}

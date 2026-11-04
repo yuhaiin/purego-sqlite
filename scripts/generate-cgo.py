@@ -52,6 +52,7 @@ SIGNATURES = {
     "LastInsertRowid": ("sqlite3_int64", "sqlite3*"),
     "Autocommit": ("int", "sqlite3*"),
     "BusyTimeout": ("int", "sqlite3*,int"),
+    "Limit": ("int", "sqlite3*,int,int"),
     "Interrupt": ("void", "sqlite3*"),
     "Libversion": ("const char*", ""),
     "LibversionNumber": ("int", ""),

@@ -150,13 +150,46 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 	}
 	var result driver.Result
 	err := c.runLocked(ctx, func() error {
-		s, err := c.prepareLocked(query)
+		s, tail, err := c.prepareNextLocked(query)
 		if err != nil {
 			return err
 		}
-		defer s.closeLocked()
-		result, err = s.execLocked(args, false)
-		return err
+		if emptyTail(tail) {
+			defer s.closeLocked()
+			result, err = s.execLocked(args, false)
+			return err
+		}
+		// Reject ambiguous bindings before stepping the first statement.
+		if len(args) != 0 {
+			_ = s.closeLocked()
+			return ErrMultipleStatements
+		}
+		for {
+			if err := ctx.Err(); err != nil {
+				_ = s.closeLocked()
+				return err
+			}
+			result, err = s.execLocked(nil, false)
+			closeErr := s.closeLocked()
+			if err != nil {
+				return err
+			}
+			if closeErr != nil {
+				return closeErr
+			}
+			if emptyTail(tail) {
+				return nil
+			}
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			// Prepare only after the previous statement has executed: scripts can
+			// create schema objects used by subsequent statements.
+			s, tail, err = c.prepareNextLocked(tail)
+			if err != nil {
+				return err
+			}
+		}
 	})
 	return result, err
 }

@@ -38,6 +38,7 @@ static uintptr_t linked_symbol(const char *name) {
  if (!strcmp(name, "sqlite3_last_insert_rowid")) return (uintptr_t)&sqlite3_last_insert_rowid;
  if (!strcmp(name, "sqlite3_get_autocommit")) return (uintptr_t)&sqlite3_get_autocommit;
  if (!strcmp(name, "sqlite3_busy_timeout")) return (uintptr_t)&sqlite3_busy_timeout;
+ if (!strcmp(name, "sqlite3_limit")) return (uintptr_t)&sqlite3_limit;
  if (!strcmp(name, "sqlite3_interrupt")) return (uintptr_t)&sqlite3_interrupt;
  if (!strcmp(name, "sqlite3_libversion")) return (uintptr_t)&sqlite3_libversion;
  if (!strcmp(name, "sqlite3_libversion_number")) return (uintptr_t)&sqlite3_libversion_number;
