@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Median tables: compare.py [purego=|cgo=|cgo-dynamic=]RAW_LOG ...
+"""Median tables: compare.py [BACKEND=]RAW_LOG ...
 
-Combining all three runs produces five implementation columns. mattn/modernc
+Add purego-bridge/cgo-dynamic-bridge runs to compare optional row readers beside
+the standard API paths. Combining three runs produces five columns; combining
+both API paths and static CGO produces seven columns. mattn/modernc
 controls are pooled across the input runs; native time ratios use matching-run
 mattn controls to avoid confusing cross-run load shifts with driver overhead.
 No dependencies required.
@@ -14,13 +16,15 @@ from pathlib import Path
 
 LABELS = {
     "purego": "PureGo",
+    "purego-bridge": "PureGo embed",
     "cgo": "CGO",
     "cgo-static": "CGO static",
     "cgo-dynamic": "CGO dynamic",
+    "cgo-dynamic-bridge": "CGO dynamic embed",
     "mattn": "mattn",
     "modernc": "modernc.org/sqlite",
 }
-ORDER = ("purego", "cgo-dynamic", "cgo-static", "cgo", "mattn", "modernc")
+ORDER = ("purego", "purego-bridge", "cgo-dynamic", "cgo-dynamic-bridge", "cgo-static", "cgo", "mattn", "modernc")
 results = defaultdict(lambda: defaultdict(list))
 references = defaultdict(lambda: defaultdict(list))
 modernc_references = defaultdict(lambda: defaultdict(list))
@@ -28,7 +32,7 @@ for specification in sys.argv[1:]:
     backend, separator, path = specification.partition("=")
     if not separator:
         backend, path = "", specification
-    elif backend not in ("purego", "cgo", "cgo-static", "cgo-dynamic"):
+    elif backend not in ("purego", "purego-bridge", "cgo", "cgo-static", "cgo-dynamic", "cgo-dynamic-bridge"):
         raise SystemExit(f"unknown backend label: {backend}")
     local = defaultdict(lambda: defaultdict(list))
     for line in Path(path).read_text().splitlines():
@@ -50,6 +54,10 @@ if not results:
     raise SystemExit("no benchmark data")
 drivers = [d for d in ORDER if any(d in group for group in results.values())]
 native = [d for d in drivers if d not in ("mattn", "modernc")]
+if "purego-bridge" in drivers:
+    LABELS["purego"] = "PureGo standard"
+if "cgo-dynamic-bridge" in drivers:
+    LABELS["cgo-dynamic"] = "CGO dynamic standard"
 
 
 def median(name, driver, metric):

@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-04",
+  "report": "2026-11-04-combined-linux-amd64.md",
+  "workloads": 18,
+  "native_configurations": 5,
+  "samples_per_native_configuration_workload": 5,
+  "pooled_control_samples_per_workload": 25,
+  "selected_samples": 1350,
+  "detailed_environments": [
+    "2026-11-04-five-way-environment.json",
+    "2026-11-04-row-bridge-environment.json"
+  ],
+  "inputs": [
+    {
+      "label": "purego",
+      "raw": "2026-11-04-pinned-purego-linux-amd64.txt"
+    },
+    {
+      "label": "purego-bridge",
+      "raw": "2026-11-04-row-bridge-purego-linux-amd64.txt"
+    },
+    {
+      "label": "cgo-dynamic",
+      "raw": "2026-11-04-pinned-cgo-dynamic-linux-amd64.txt"
+    },
+    {
+      "label": "cgo-dynamic-bridge",
+      "raw": "2026-11-04-row-bridge-cgo-dynamic-linux-amd64.txt"
+    },
+    {
+      "label": "cgo",
+      "raw": "2026-11-04-row-bridge-cgo-linux-amd64.txt"
+    }
+  ],
+  "notes": [
+    "Existing measured samples are combined without changing raw logs. Each native ratio uses its own matching-run mattn/modernc references.",
+    "The standard and embed engines use different native compilers; the separate same-library probe isolates row-reader improvements.",
+    "The combined controls pool 25 samples, so their medians differ from the earlier three-run reports."
+  ]
+}

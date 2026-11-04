@@ -430,8 +430,8 @@ With a compatible embed prebuilt, the optional row reader reduces the
 three-column scan to two native calls per row. A same-library, CGO-disabled
 comparison reduces FullScan1000 time by about 40%, with the same Go allocation
 count. The published prebuilt run takes about 0.713ms, versus matching mattn
-0.605ms and modernc 0.591ms. The benchmark README includes complete five-way
-tables for both standard libraries and the optional bridge; the bridge does not
+0.605ms and modernc 0.591ms. The benchmark README puts all five implementations
+in one combined table with standard-library and embed columns; the bridge does not
 make every workload faster than modernc.
 
 Compared with mattn, this driver removes the application's CGO build requirement
