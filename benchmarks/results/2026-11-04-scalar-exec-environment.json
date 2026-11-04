@@ -1,0 +1,302 @@
+{
+  "implementation_commit": "73cd1c6464ffc7c82b053813292a63afd0dcf7aa",
+  "embed_commit": "d721bc5e9a2a89ea6ba817041072c1c4bcf32b6a",
+  "go": "go version go1.27.3 linux/amd64",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "gomaxprocs": 4,
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "lscpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "48 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "4"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-3"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "AuthenticAMD"
+      },
+      {
+        "field": "Model name:",
+        "data": "AMD EPYC 7763 64-Core Processor"
+      },
+      {
+        "field": "CPU family:",
+        "data": "25"
+      },
+      {
+        "field": "Model:",
+        "data": "1"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "2"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "2"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "1"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "4890.84"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves user_shstk clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm"
+      },
+      {
+        "field": "Virtualization:",
+        "data": "AMD-V"
+      },
+      {
+        "field": "Hypervisor vendor:",
+        "data": "Microsoft"
+      },
+      {
+        "field": "Virtualization type:",
+        "data": "full"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "64 KiB (2 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "64 KiB (2 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "1 MiB (2 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "32 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-3"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Vulnerable: Safe RET, no microcode"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Vulnerable"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; Retpolines; STIBP disabled; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Vulnerable: No microcode"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "filesystem": "Filesystem     Type  1K-blocks  Used Available Use% Mounted on\ntmpfs          tmpfs   8183760    84   8183676   1% /dev/shm",
+  "benchtime": "300ms",
+  "samples_per_backend_workload": 5,
+  "same_library_benchtime": "500ms",
+  "same_library_samples": 7,
+  "native_manifest": {
+    "sqlite": "3.54.1",
+    "source": "https://www.sqlite.org/2026/sqlite-amalgamation-3540100.zip",
+    "source_sha256": "0a9c8e34352dad46006aa82836d5383bff9dc6bc9ce5a60553c05aa30e6ad1f9",
+    "source_sha3_256": "92281c86e2957f9b9305890f9ac04204caa7b677cc868dc326d942689df28e30",
+    "library_sha256": "af6661ef46bb2d6c0b6952de884aba17dd0d2f722449b568ed4acbc4b9bdc914",
+    "goos": "linux",
+    "goarch": "amd64",
+    "flags": [
+      "-DSQLITE_THREADSAFE=1",
+      "-DSQLITE_ENABLE_FTS5",
+      "-DSQLITE_ENABLE_RTREE",
+      "-DSQLITE_ENABLE_DBSTAT_VTAB",
+      "-DSQLITE_ENABLE_MATH_FUNCTIONS",
+      "-DSQLITE_USE_URI=1"
+    ],
+    "row_bridge_abi": 0,
+    "exec_bridge_abi": 0,
+    "compiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+  },
+  "embed_manifest": {
+    "sqlite_version": "3.54.1",
+    "row_bridge_abi": 1,
+    "row_bridge_sha256": "923faef7425727a9c5e69d688b2dae1f4966534b8d2ca9f8df3e86dee84c8aab",
+    "exec_bridge_abi": 1,
+    "exec_bridge_sha256": "a73d2109010b5c34fddd7e3fb233bf0ab4cbf02217260214ea295555ddfe197c",
+    "goos": "linux",
+    "goarch": "amd64",
+    "libc": "glibc",
+    "float_abi": "",
+    "minimum_os": "glibc 2.17",
+    "filename": "libsqlite3.so",
+    "sha256": "2c2795a4591f963f2102ff8e5b13076c1771b09cba584953bb457896c90b2095",
+    "size": 1522920,
+    "source_url": "https://www.sqlite.org/2026/sqlite-amalgamation-3540100.zip",
+    "source_sha256": "0a9c8e34352dad46006aa82836d5383bff9dc6bc9ce5a60553c05aa30e6ad1f9",
+    "source_sha3_256": "92281c86e2957f9b9305890f9ac04204caa7b677cc868dc326d942689df28e30",
+    "compiler": "Zig 0.17.0; clang version 22.1.8",
+    "flags": [
+      "-target",
+      "x86_64-linux-gnu.2.17",
+      "-mcpu=baseline",
+      "-O2",
+      "-g0",
+      "-shared",
+      "-fPIC",
+      "-Wl,-soname,libsqlite3.so",
+      "-Wl,--build-id=sha1",
+      "-Wl,-s",
+      "-Wl,-Bsymbolic",
+      "-DSQLITE_THREADSAFE=1",
+      "-DSQLITE_ENABLE_FTS5",
+      "-DSQLITE_ENABLE_RTREE",
+      "-DSQLITE_ENABLE_DBSTAT_VTAB",
+      "-DSQLITE_ENABLE_MATH_FUNCTIONS",
+      "-DSQLITE_USE_URI=1",
+      "-lm",
+      "-lpthread",
+      "-ldl"
+    ],
+    "build_commit": "741503efb3d76db749dc3770dd394e99ae1d9665",
+    "build_run": "https://github.com/yuhaiin/purego-sqlite-embed/actions/runs/41793502034"
+  },
+  "date": "2026-11-04",
+  "workflow_run": "https://github.com/yuhaiin/purego-sqlite/actions/runs/41794719883",
+  "report": "2026-11-04-scalar-exec-combined-linux-amd64.md",
+  "inputs": [
+    {
+      "label": "purego",
+      "raw": "2026-11-04-scalar-exec-purego-linux-amd64.txt"
+    },
+    {
+      "label": "purego-bridge",
+      "raw": "2026-11-04-scalar-exec-purego-bridge-linux-amd64.txt"
+    },
+    {
+      "label": "cgo-dynamic",
+      "raw": "2026-11-04-scalar-exec-cgo-dynamic-linux-amd64.txt"
+    },
+    {
+      "label": "cgo-dynamic-bridge",
+      "raw": "2026-11-04-scalar-exec-cgo-dynamic-bridge-linux-amd64.txt"
+    },
+    {
+      "label": "cgo",
+      "raw": "2026-11-04-scalar-exec-cgo-linux-amd64.txt"
+    }
+  ],
+  "workloads": 18,
+  "selected_samples": 1350,
+  "pooled_control_samples_per_workload": 25,
+  "same_library_raw": "2026-11-04-scalar-exec-matched-purego.txt",
+  "same_library_selected_samples": 56,
+  "notes": [
+    "All five full comparisons ran sequentially on one GitHub-hosted runner, without local video-transcoding contention.",
+    "PureGo and dynamic CGO embed use the exact committed Linux amd64 glibc asset; their matching mattn controls use that same library.",
+    "Standard shared and static engines use the runner C compiler; the embed asset uses pinned Zig/Clang. Native identity/options match mattn within each executable.",
+    "modernc reports the same SQLite source ID but has its own compile options. Full results do not isolate engine build differences.",
+    "Same-library CGO-free probes disable only ReadRow or ExecScalar on each connection and use the actual embed asset.",
+    "CPU affinity is recorded, but frequency and physical-host isolation are not guaranteed. Small differences and parallel-contention rankings are exploratory.",
+    "Go allocation metrics exclude native row/scalar scratch and engine allocations.",
+    "Local diagnostic full runs affected by recurring ffmpeg load are excluded; original logs remain under .native/exec-* in the working checkout."
+  ],
+  "raw_log_normalization": "Only trailing padding on Go's CPU header is removed. All benchmark sample lines are unchanged; the workflow artifact retains the original bytes."
+}

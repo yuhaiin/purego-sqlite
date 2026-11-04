@@ -138,11 +138,12 @@ jobs:
           SQLITE_TEST_BUNDLED: '1'
           SQLITE_TEST_LIBRARY: ''
         run: go test -tags sqlite_bundle -timeout 3m ./...
-      - name: Optional row reader and standard-API fallback
+      - name: Optional row reader, scalar executor and standard-API fallback
         env:
           SQLITE_TEST_ROW_BRIDGE: '1'
+          SQLITE_TEST_EXEC_BRIDGE: '1'
         run: |
-          python3 scripts/build-native.py --row-bridge --output .native/row-bridge
+          python3 scripts/build-native.py --row-bridge --exec-bridge --output .native/row-bridge
           export SQLITE_TEST_LIBRARY="$(python3 -c 'from pathlib import Path; import platform; print((Path(".native/row-bridge") / {"Linux":"libsqlite3.so","Darwin":"libsqlite3.dylib","Windows":"sqlite3.dll"}[platform.system()]).resolve())')"
           go test -gcflags=all=-d=checkptr=2 -timeout 3m ./...
           if [ "${{ matrix.race }}" = true ]; then

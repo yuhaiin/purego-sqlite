@@ -70,6 +70,8 @@ func (c *Connector) HasFeature(name string) (bool, error) {
 		return c.api.ConfigExtension != nil && c.api.LoadExtension != nil && c.api.EnableLoadExtension != nil, nil
 	case "row_read_v1":
 		return c.api.ReadRow != nil, nil
+	case "exec_scalar_v1":
+		return c.api.ExecScalar != nil, nil
 	default:
 		return false, fmt.Errorf("%w: unknown feature %q", ErrUnsupported, name)
 	}

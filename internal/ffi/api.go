@@ -20,16 +20,20 @@ const (
 )
 
 type API struct {
-	connection func() *API
-	rowReader  func() func(uintptr, []RowValue) int32
-	Path       string
+	connection     func() *API
+	rowReader      func() func(uintptr, []RowValue) int32
+	scalarExecutor func() func(uintptr, []uint64) int32
+	Path           string
 	// Exec drains rows and reads execution metadata before reset can change errors.
 	// ResetClear returns the reset status; clearing bindings must still run on error.
 	Exec       func(stmt, db uintptr, knownWrite bool) (rc int32, lastID, changes int64)
 	ResetClear func(uintptr) int32
 	// ReadRow is optional. Its output must be allocated by native Malloc, not Go.
 	// Missing v1 symbols leave it nil for standard libraries.
-	ReadRow             func(stmt uintptr, values []RowValue) int32
+	ReadRow func(stmt uintptr, values []RowValue) int32
+	// ExecScalar is optional. frame is native memory: 16-byte output followed
+	// by 16-byte (bits, SQLite type) scalar inputs. Success includes reset.
+	ExecScalar          func(stmt uintptr, frame []uint64) int32
 	Open                func(string, *uintptr, int32, uintptr) int32                `sqlite:"sqlite3_open_v2"`
 	Close               func(uintptr) int32                                         `sqlite:"sqlite3_close"`
 	Errmsg              func(uintptr) string                                        `sqlite:"sqlite3_errmsg"`
@@ -113,6 +117,7 @@ func Load(path string) (*API, error) {
 	a.bindOperations()
 	bindFast(a, h)
 	bindRow(a, h)
+	bindExecScalar(a, h)
 	a.ConfigExtension = extensionConfig(h)
 	libraries.apis[path] = a
 	return a, nil
@@ -126,6 +131,9 @@ func (a *API) ForConnection() *API {
 		local := a.connection()
 		if a.rowReader != nil {
 			local.ReadRow = a.rowReader()
+		}
+		if a.scalarExecutor != nil {
+			local.ExecScalar = a.scalarExecutor()
 		}
 		return local
 	}

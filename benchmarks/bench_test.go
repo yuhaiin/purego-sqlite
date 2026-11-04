@@ -403,7 +403,11 @@ func TestSameNativeSQLite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("native library=%s row_read_v1=%v", connector.LibraryPath(), rowReader)
+	scalarExec, err := connector.HasFeature("exec_scalar_v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("native library=%s row_read_v1=%v exec_scalar_v1=%v", connector.LibraryPath(), rowReader, scalarExec)
 	var identity, options string
 	for _, d := range drivers {
 		db := open(t, d, filepath.Join(t.TempDir(), "identity.db"), 1)

@@ -311,6 +311,16 @@ The row output uses connection-owned SQLite memory (24 bytes per cached column),
 reused under the connection lock and freed on Close. Go buffers are never hidden
 inside a reusable native call frame.
 
+Libraries can also export `purego_sqlite_exec_scalar_v1` to bind all positional
+scalar parameters, execute to completion, capture results and reset in one native
+call. `connector.HasFeature("exec_scalar_v1")` reports availability. INTEGER,
+REAL, BOOLEAN and NULL use this path for Exec; TEXT/BLOB, named arguments and
+Query use standard bindings. The driver validates every argument before using
+the helper. It preserves detailed errors before cleanup and never retries a
+failed execution. Native scalar scratch uses 16 bytes plus 16 bytes per cached
+parameter, grows on demand under the connection lock and is freed on Close.
+These native buffers are additional to Go's benchmark B/op measurements.
+
 The companion's bridge is compiled alongside the unchanged SQLite amalgamation
 into the same shared library. Applications still support `CGO_ENABLED=0` and do
 not need an additional helper library. The linked CGO engine continues to use
