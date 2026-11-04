@@ -6,7 +6,7 @@ if [[ ! -f "$repo_dir/.native/libsqlite3.so" ]]; then
   python3 "$repo_dir/scripts/build-native.py"
 fi
 export CGO_ENABLED=1
-export CGO_CFLAGS="-I$repo_dir/.native/src"
+export CGO_CFLAGS="-O2 -g -I$repo_dir/.native/src"
 export CGO_LDFLAGS="-L$repo_dir/.native -Wl,-rpath,$repo_dir/.native"
 export LD_LIBRARY_PATH="$repo_dir/.native${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 bench_backend="${BENCH_BACKEND:-purego}"
@@ -23,5 +23,9 @@ mkdir -p results
 if (( $# == 0 )); then
   set -- -benchtime=200ms -count=5
 fi
-go test -tags "$bench_tags" -run 'TestSameNativeSQLite|TestConnectionSettings' -v -bench . -benchmem -timeout 20m "$@" | tee results/local-raw.txt
+bench_command=(go test -tags "$bench_tags" -run 'TestSameNativeSQLite|TestConnectionSettings' -v -bench . -benchmem -timeout 20m "$@")
+if [[ -n "${BENCH_CPUSET:-}" ]]; then
+  bench_command=(taskset -c "$BENCH_CPUSET" "${bench_command[@]}")
+fi
+"${bench_command[@]}" | tee results/local-raw.txt
 python3 compare.py "$bench_backend=results/local-raw.txt" | tee results/local-summary.md
