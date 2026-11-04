@@ -260,3 +260,34 @@ jobs:
           ENTRYPOINT ["/driver.test"]
           DOCKERFILE
           docker run --rm --network none --tmpfs /tmp:exec,mode=1777 -e SQLITE_REQUIRE_FEATURES=1 sqlite-static-test -test.v -test.timeout=3m
+
+  android:
+    name: CGO Android ${{ matrix.arch }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: arm64, triple: aarch64-linux-android}
+          - {arch: amd64, triple: x86_64-linux-android}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.27.3'
+      - name: Cross-compile the complete test suite against the NDK
+        env:
+          GOOS: android
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: '1'
+          NDK_TRIPLE: ${{ matrix.triple }}
+        run: |
+          export CC="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/${NDK_TRIPLE}24-clang"
+          go test -c -o android.test .
+          readelf -d android.test > android-dependencies.txt
+          cat android-dependencies.txt
+          if grep -Eq 'NEEDED.*(sqlite|pthread)' android-dependencies.txt; then
+            echo 'SQLite must be linked into the executable; Android threads use libc' >&2
+            exit 1
+          fi

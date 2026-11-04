@@ -6,7 +6,8 @@ package sqlite3
 /*
 #cgo CFLAGS: -O2 -DSQLITE_THREADSAFE=1 -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_DBSTAT_VTAB -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_USE_URI=1
 #cgo !windows CFLAGS: -fvisibility=hidden
-#cgo linux LDFLAGS: -lm -lpthread -ldl
+#cgo linux,!android LDFLAGS: -lm -lpthread -ldl
+#cgo android LDFLAGS: -lm -ldl
 #cgo darwin freebsd openbsd netbsd dragonfly LDFLAGS: -lm -lpthread
 #include <stdint.h>
 #include <stdlib.h>

@@ -484,3 +484,7 @@ Implementation references: [SQLite C API](https://www.sqlite.org/c3ref/intro.htm
 [transient bindings](https://www.sqlite.org/c3ref/bind_blob.html),
 [secure extension configuration](https://www.sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigenableloadextension),
 [FTS5 tokenizer API](https://www.sqlite.org/fts5.html#custom_tokenizers).
+
+Android builds use the CGO backend and the official amalgamation linked into
+that executable or shared object. Set `CGO_ENABLED=1` and select the NDK compiler
+for the target ABI; Android does not provide a separate `libpthread`.
