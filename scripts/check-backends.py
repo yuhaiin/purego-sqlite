@@ -32,7 +32,8 @@ for target in [("linux", "amd64"), ("linux", "arm64"), ("darwin", "amd64"),
                ("darwin", "arm64"), ("windows", "amd64"), ("windows", "arm64"),
                ("linux", "mipsle"), ("linux", "386"), ("freebsd", "amd64"),
                ("freebsd", "arm64"), ("openbsd", "amd64"), ("netbsd", "amd64"),
-               ("dragonfly", "amd64"), ("windows", "386")]:
+               ("dragonfly", "amd64"), ("windows", "386"),
+               ("android", "amd64"), ("android", "arm64"), ("ios", "arm64")]:
     for enabled in (0, 1):
         check(*target, enabled)
 for enabled in (0, 1):
