@@ -24,8 +24,10 @@ type API struct {
 	Path       string
 	// Exec drains rows and reads execution metadata before reset can change errors.
 	// ResetClear returns the reset status; clearing bindings must still run on error.
-	Exec                func(stmt, db uintptr, knownWrite bool) (rc int32, lastID, changes int64)
-	ResetClear          func(uintptr) int32
+	Exec       func(stmt, db uintptr, knownWrite bool) (rc int32, lastID, changes int64)
+	ResetClear func(uintptr) int32
+	// ReadRow is optional. Missing v1 symbols leave it nil for standard libraries.
+	ReadRow             func(stmt uintptr, values []RowValue) int32
 	Open                func(string, *uintptr, int32, uintptr) int32                `sqlite:"sqlite3_open_v2"`
 	Close               func(uintptr) int32                                         `sqlite:"sqlite3_close"`
 	Errmsg              func(uintptr) string                                        `sqlite:"sqlite3_errmsg"`
@@ -107,6 +109,7 @@ func Load(path string) (*API, error) {
 	}
 	a.bindOperations()
 	bindFast(a, h)
+	bindRow(a, h)
 	a.ConfigExtension = extensionConfig(h)
 	libraries.apis[path] = a
 	return a, nil

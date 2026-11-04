@@ -2,18 +2,20 @@
 # Linux same-library comparison. Native compilation is separate from Go CGO use.
 set -euo pipefail
 repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-if [[ ! -f "$repo_dir/.native/libsqlite3.so" ]]; then
-  python3 "$repo_dir/scripts/build-native.py"
+native_dir="${BENCH_NATIVE_DIR:-$repo_dir/.native}"
+native_dir=$(realpath "$native_dir")
+if [[ ! -f "$native_dir/libsqlite3.so" ]]; then
+  python3 "$repo_dir/scripts/build-native.py" --output "$native_dir"
 fi
 export CGO_ENABLED=1
-export CGO_CFLAGS="-O2 -g -I$repo_dir/.native/src"
-export CGO_LDFLAGS="-L$repo_dir/.native -Wl,-rpath,$repo_dir/.native"
-export LD_LIBRARY_PATH="$repo_dir/.native${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export CGO_CFLAGS="-O2 -g -I$native_dir/src"
+export CGO_LDFLAGS="-L$native_dir -Wl,-rpath,$native_dir"
+export LD_LIBRARY_PATH="$native_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 bench_backend="${BENCH_BACKEND:-purego}"
 case "$bench_backend" in
-  purego) bench_tags="libsqlite3,sqlite_purego"; export BENCH_SQLITE_LIBRARY="$repo_dir/.native/libsqlite3.so" ;;
+  purego) bench_tags="libsqlite3,sqlite_purego"; export BENCH_SQLITE_LIBRARY="$native_dir/libsqlite3.so" ;;
   cgo) bench_tags="libsqlite3"; unset BENCH_SQLITE_LIBRARY ;;
-  cgo-dynamic) bench_tags="libsqlite3,sqlite_dynamic"; export BENCH_SQLITE_LIBRARY="$repo_dir/.native/libsqlite3.so" ;;
+  cgo-dynamic) bench_tags="libsqlite3,sqlite_dynamic"; export BENCH_SQLITE_LIBRARY="$native_dir/libsqlite3.so" ;;
   *) echo "BENCH_BACKEND must be purego, cgo or cgo-dynamic" >&2; exit 1 ;;
 esac
 export GOMAXPROCS="${GOMAXPROCS:-4}"

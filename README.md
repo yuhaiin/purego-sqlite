@@ -300,6 +300,19 @@ SQLite's other checkpoint modes); no Go hook API is claimed.
 
 ## Optional embedded SQLite
 
+Prebuilt libraries can optionally export `purego_sqlite_read_row_v1`. The driver
+detects this versioned interface once when loading each library and reads all
+columns of a row in one native call. `connector.HasFeature("row_read_v1")`
+reports availability. System SQLite and older prebuilts without this export
+continue through standard SQLite APIs. No custom export is required to open a
+database; a failed bridge read returns an error and is never silently retried.
+Native TEXT/BLOB buffers are copied before the next step/reset/finalize.
+
+The companion's bridge is compiled alongside the unchanged SQLite amalgamation
+into the same shared library. Applications still support `CGO_ENABLED=0` and do
+not need an additional helper library. The linked CGO engine continues to use
+standard APIs unless an explicitly selected library provides the bridge.
+
 For committed prebuilt binaries, use the companion
 [purego-sqlite-embed](https://github.com/yuhaiin/purego-sqlite-embed) module:
 

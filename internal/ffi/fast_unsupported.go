@@ -3,3 +3,4 @@
 package ffi
 
 func bindFast(*API, uintptr) {}
+func bindRow(*API, uintptr)  {}

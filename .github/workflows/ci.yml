@@ -138,6 +138,17 @@ jobs:
           SQLITE_TEST_BUNDLED: '1'
           SQLITE_TEST_LIBRARY: ''
         run: go test -tags sqlite_bundle -timeout 3m ./...
+      - name: Optional row reader and standard-API fallback
+        env:
+          SQLITE_TEST_ROW_BRIDGE: '1'
+        run: |
+          python3 scripts/build-native.py --row-bridge --output .native/row-bridge
+          export SQLITE_TEST_LIBRARY="$(python3 -c 'from pathlib import Path; import platform; print((Path(".native/row-bridge") / {"Linux":"libsqlite3.so","Darwin":"libsqlite3.dylib","Windows":"sqlite3.dll"}[platform.system()]).resolve())')"
+          go test -gcflags=all=-d=checkptr=2 -timeout 3m ./...
+          if [ "${{ matrix.race }}" = true ]; then
+            CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 go test -race -timeout 3m ./...
+            CGO_ENABLED=1 go test -race -tags sqlite_purego -timeout 3m ./...
+          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:

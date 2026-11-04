@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"io"
+	"math"
 	"strings"
 	"unsafe"
 
@@ -14,6 +15,7 @@ type rows struct {
 	s                               *stmt
 	ctx                             context.Context
 	own, closed, pending, exhausted bool
+	values                          []ffi.RowValue
 }
 
 func (r *rows) Columns() []string {
@@ -93,6 +95,31 @@ func (r *rows) Next(dest []driver.Value) error {
 
 		if len(dest) != len(s.columns) {
 			return io.ErrShortBuffer
+		}
+		if a.ReadRow != nil {
+			if len(r.values) != len(dest) {
+				r.values = make([]ffi.RowValue, len(dest))
+			}
+			if rc := a.ReadRow(s.ptr, r.values); rc != ffi.OK {
+				return c.sqliteError(rc)
+			}
+			for i, value := range r.values {
+				switch value.Type {
+				case 1:
+					dest[i] = int64(value.Bits)
+				case 2:
+					dest[i] = math.Float64frombits(value.Bits)
+				case 3:
+					dest[i] = string(unsafe.Slice(value.Pointer(), int(value.Size)))
+				case 4:
+					data := make([]byte, int(value.Size))
+					copy(data, unsafe.Slice(value.Pointer(), int(value.Size)))
+					dest[i] = data
+				case 5:
+					dest[i] = nil
+				}
+			}
+			return nil
 		}
 		for i := range dest {
 			col := int32(i)
