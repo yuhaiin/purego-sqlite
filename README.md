@@ -327,6 +327,11 @@ panic/error handling, security flags and callback ownership.
 
 ## Online backup
 
+`Conn.BackupFrom` also supports restore, attached schemas, memory-to-memory
+copies and progress callbacks between connections using the same native engine.
+See [snapshots, caching and hooks](docs/mattn-medium.md) for these APIs, optional
+serialization, statement caching, authorizer/transaction hooks and tracing.
+
 ```go
 source, err := db.Conn(ctx)
 if err != nil { return err }

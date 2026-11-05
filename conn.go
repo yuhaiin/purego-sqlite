@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/yuhaiin/purego-sqlite/internal/ffi"
@@ -17,6 +18,7 @@ import (
 // stops and joins its cancellation callback before releasing that mutex.
 type Conn struct {
 	mu          sync.Mutex
+	id          uint64
 	api         *ffi.API
 	cfg         config
 	db          uintptr
@@ -30,7 +32,11 @@ type Conn struct {
 	tx          *transaction
 	inCallback  atomic.Int32
 	callbackErr error
+	cache       *statementCache
+	hookTokens  [hookCount]uintptr
 }
+
+var nextConnectionID atomic.Uint64
 
 func (c *Conn) sqliteError(rc int32) error {
 	if rc == ffi.OK {
@@ -47,7 +53,11 @@ func (c *Conn) sqliteError(rc int32) error {
 		// Allocation/bridge failures need not update this connection's error.
 		message = c.api.Errstr(rc)
 	}
-	return &Error{Code: int(rc & 255), ExtendedCode: int(extended), Message: message}
+	err := &Error{Code: int(rc & 255), ExtendedCode: int(extended), Message: message}
+	if c.db != 0 && c.api.SystemErrno != nil && (err.Code == 14 || err.Code == 10 && err.ExtendedCode != 10|12<<8) {
+		err.SystemErrno = syscall.Errno(c.api.SystemErrno(c.db))
+	}
+	return err
 }
 
 // runLocked must hold mu throughout, including stopping/joining AfterFunc.
@@ -105,15 +115,17 @@ func (c *Conn) available() error {
 	return nil
 }
 
-func (c *Conn) Close() error {
+func (c *Conn) Close() (err error) {
 	if c.inCallback.Load() != 0 {
 		return ErrCallbackReentry
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	defer func() { err = c.takeCallbackError(err) }()
 	if c.db == 0 {
 		return nil
 	}
+	c.clearStatementCacheLocked()
 	for s := range c.stmts {
 		_ = s.closeLocked()
 	}
@@ -122,6 +134,10 @@ func (c *Conn) Close() error {
 		return c.sqliteError(rc)
 	}
 	c.db = 0
+	for i, token := range c.hookTokens {
+		ffi.ReleaseCallbackToken(token)
+		c.hookTokens[i] = 0
+	}
 	c.sqlbuf = nil
 	if c.rowStorage != nil {
 		c.api.Free(c.rowStorage)
@@ -153,7 +169,7 @@ func (c *Conn) PrepareContext(ctx context.Context, query string) (driver.Stmt, e
 		if s != nil {
 			_ = s.closeLocked()
 		}
-		return nil, err
+		return nil, c.takeCallbackError(err)
 	}
 	return s, nil
 }
@@ -168,14 +184,17 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 	}
 	var result driver.Result
 	err := c.runLocked(ctx, func() error {
-		s, tail, err := c.prepareNextLocked(query)
+		s, tail, err := c.prepareOneShotLocked(query)
 		if err != nil {
 			return err
 		}
 		if emptyTail(tail) {
-			defer s.closeLocked()
 			result, err = s.execLocked(args, false)
-			return err
+			closeErr := s.releaseLocked(err == nil && ctx.Err() == nil && c.callbackErr == nil)
+			if err != nil {
+				return err
+			}
+			return closeErr
 		}
 		// Reject ambiguous bindings before stepping the first statement.
 		if len(args) != 0 {
@@ -224,9 +243,13 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 	var r *rows
 	err := c.runLocked(ctx, func() error {
 		var err error
-		s, err = c.prepareLocked(query)
+		var tail string
+		s, tail, err = c.prepareOneShotLocked(query)
 		if err != nil {
 			return err
+		}
+		if !emptyTail(tail) {
+			return ErrMultipleStatements
 		}
 		r, err = s.queryLocked(ctx, args, true)
 		return err
@@ -235,7 +258,7 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 		if s != nil {
 			_ = s.closeLocked()
 		}
-		return nil, err
+		return nil, c.takeCallbackError(err)
 	}
 	return r, nil
 }

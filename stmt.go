@@ -24,6 +24,7 @@ type stmt struct {
 	names        []string
 	columns      []string
 	decltypes    []string
+	cacheKey     string
 }
 
 func (c *Conn) prepareLocked(query string) (*stmt, error) {
@@ -133,13 +134,27 @@ func (s *stmt) refreshColumns() {
 	}
 }
 func (s *stmt) NumInput() int { return -1 } // bindLocked validates names and positional counts.
+
+// Readonly reports sqlite3_stmt_readonly for this prepared statement. It does
+// not imply that a statement has no application callbacks or other side effects.
+func (s *stmt) Readonly() (bool, error) {
+	if s.c.inCallback.Load() != 0 {
+		return false, ErrCallbackReentry
+	}
+	s.c.mu.Lock()
+	defer s.c.mu.Unlock()
+	if s.ptr == 0 {
+		return false, ErrClosed
+	}
+	return s.c.api.StmtReadonly(s.ptr) != 0, nil
+}
 func (s *stmt) Close() error {
 	if s.c.inCallback.Load() != 0 {
 		return ErrCallbackReentry
 	}
 	s.c.mu.Lock()
 	defer s.c.mu.Unlock()
-	return s.closeLocked()
+	return s.c.takeCallbackError(s.closeLocked())
 }
 func (s *stmt) closeLocked() error {
 	if s.ptr == 0 {
@@ -203,7 +218,7 @@ func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 		if r != nil {
 			_ = r.closeLocked()
 		}
-		return nil, err
+		return nil, c.takeCallbackError(err)
 	}
 	return r, nil
 }
