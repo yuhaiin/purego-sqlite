@@ -7,11 +7,13 @@ mattn and modernc remain benchmark-only dependencies.
 
 The [mattn compatibility benchmark report](mattn-high-priority.md) adds scalar
 functions, grouped Go aggregates, custom collation sorting, timestamp binding and
-typed row decoding, with raw PureGo/static CGO/dynamic CGO and mattn samples.
+typed row decoding. Both compatibility reports use the same CI run and seven
+configuration/control columns as the SQL comparison below.
 
 The [medium-priority compatibility report](mattn-medium-priority.md) measures
 optional statement caching, snapshots, connection backup, hooks and tracing,
-alongside the five-implementation SQL controls.
+alongside the five-implementation SQL controls. The full run covers 35 workloads:
+18 SQL cases and 17 compatibility cases.
 
 ## Implementations and controls
 
@@ -49,19 +51,22 @@ production PureGo also builds and is tested with `CGO_ENABLED=0`.
 ## Reproduce the complete comparison
 
 From the repository root on Linux, with Go 1.26+, Python 3 and a C compiler.
+The commands below select the 18 SQL workloads. Omit the `-bench` filter to
+include the compatibility cases in the complete report.
 Set `SQLITE_EMBED_NATIVE_DIR` to a directory containing the embed asset
 `libsqlite3.so` and its matching `src/sqlite3.h` before running the commands:
 
 ```sh
 export TMPDIR=/dev/shm GOMAXPROCS=4 BENCH_CPUSET=0-3
-python3 scripts/build-native.py
+go run ./internal/cmd/build-native
 for backend in purego cgo-dynamic cgo; do
-  BENCH_BACKEND="$backend" scripts/benchmark.sh -benchtime=300ms -count=5
+  BENCH_BACKEND="$backend" scripts/benchmark.sh \
+    -bench '^BenchmarkSQLite$' -benchtime=300ms -count=5
   cp benchmarks/results/local-raw.txt "benchmarks/results/local-$backend.txt"
 done
 for backend in purego cgo-dynamic; do
   BENCH_BACKEND="$backend" BENCH_NATIVE_DIR="$SQLITE_EMBED_NATIVE_DIR" \
-    scripts/benchmark.sh -benchtime=300ms -count=5
+    scripts/benchmark.sh -bench '^BenchmarkSQLite$' -benchtime=300ms -count=5
   cp benchmarks/results/local-raw.txt "benchmarks/results/local-$backend-bridge.txt"
 done
 python3 benchmarks/compare.py \
@@ -102,17 +107,20 @@ all three backend selections and retains their logs as artifacts.
 
 ## Measurement environment and methodology
 
-Measured on **2026-11-04**, Linux/amd64, **AMD EPYC 7763 64-Core Processor**, Go
+Measured on **2026-11-05**, Linux/amd64, **AMD EPYC 9V74 80-Core Processor**, Go
 `go1.27.3` and **GOMAXPROCS=4** in a dedicated GitHub Actions job.
-All five configurations run sequentially on the same runner, pinned to logical
-CPUs **0, 1, 2, 3**. The [workflow run](https://github.com/yuhaiin/purego-sqlite/actions/runs/41794719883)
-uses driver commit `73cd1c6` and embed commit
-`d721bc5`. The standard shared/static engine uses the runner's
-C compiler; the embed asset uses Zig 0.17.0 / Clang 22.1.8. The
-[environment manifest](results/2026-11-04-scalar-exec-environment.json) records CPU topology,
-compiler flags, source/binary hashes, exact inputs and all raw-log names.
-These replace the earlier Ryzen host measurements; absolute times from the two
-machines must not be compared as a before/after result.
+All five configurations ran sequentially on the same runner, pinned to logical
+CPUs **0, 1, 2, 3**. The [workflow run](https://github.com/yuhaiin/purego-sqlite/actions/runs/42004475183)
+uses driver commit `0a021fd` (the current main implementation
+plus capability documentation) and embed commit `d721bc5`.
+The standard shared/static engine uses GCC 13.3; the embed asset uses
+Zig 0.17.0 / Clang 22.1.8. The
+[environment manifest](results/2026-11-05-current-environment.json) records CPU topology,
+compiler flags, source/binary hashes, exact inputs and raw-log names.
+
+These results supersede the November 4 table. The previous EPYC 7763 runner
+and local Ryzen runs used different CPUs; differences in absolute times are
+not a before/after measure of driver improvements. Ratios use this run's controls.
 
 - Each backend run has five sequential 300ms samples per implementation and
   workload. Runs execute sequentially on the same CPU set. Our backend columns each
@@ -150,12 +158,10 @@ machines must not be compared as a before/after result.
 - Throughput counts benchmark units per second: one whole batch/transaction or
   scan in those workloads, and one SQL operation in the other workloads.
 
-Earlier local diagnostic runs were affected by recurring video-transcoding
-load and are excluded from this table. The formal measurements use one hosted
-runner and matching controls. This does not guarantee exclusive physical-host
-resources: small differences and cross-configuration absolute rankings remain
-exploratory. The benchmark wrapper retains Go's default CGO optimization flags
-(`-O2 -g`); older experiments that overrode those defaults are historical.
+The formal measurements use one hosted runner and matching controls. This does
+not guarantee exclusive physical-host resources: small differences and
+cross-configuration absolute rankings remain exploratory. The benchmark wrapper
+retains Go's default CGO optimization flags (`-O2 -g`).
 
 ## Results
 
@@ -163,22 +169,24 @@ Both paths are in the **same table**. `standard` uses public SQLite APIs and
 works with system libraries or older prebuilts. `embed` uses both optional
 `purego_sqlite_read_row_v1` and `purego_sqlite_exec_scalar_v1` exports in the
 companion's actual CI-built library. Static CGO uses the stock linked engine.
-For FullScan1000, PureGo takes **1,427,835ns standard**
-and **834,058ns embed**.
+For FullScan1000, PureGo takes **1,004,743ns standard**
+and **597,124ns embed**.
 
 | Column | Native library / API path | Raw five-sample run |
 | --- | --- | --- |
-| PureGo standard | Official shared library, standard APIs | [raw](results/2026-11-04-scalar-exec-purego-linux-amd64.txt) |
-| PureGo embed | CI-built embed library, row reader and scalar executor v1 | [raw](results/2026-11-04-scalar-exec-purego-bridge-linux-amd64.txt) |
-| CGO dynamic standard | Official shared library, standard APIs | [raw](results/2026-11-04-scalar-exec-cgo-dynamic-linux-amd64.txt) |
-| CGO dynamic embed | CI-built embed library, row reader and scalar executor v1 | [raw](results/2026-11-04-scalar-exec-cgo-dynamic-bridge-linux-amd64.txt) |
-| CGO static | Stock official engine linked into the executable | [raw](results/2026-11-04-scalar-exec-cgo-linux-amd64.txt) |
+| PureGo standard | Official shared library, standard APIs | [raw](results/2026-11-05-current-purego-linux-amd64.txt) |
+| PureGo embed | CI-built embed library, row reader and scalar executor v1 | [raw](results/2026-11-05-current-purego-bridge-linux-amd64.txt) |
+| CGO dynamic standard | Official shared library, standard APIs | [raw](results/2026-11-05-current-cgo-dynamic-linux-amd64.txt) |
+| CGO dynamic embed | CI-built embed library, row reader and scalar executor v1 | [raw](results/2026-11-05-current-cgo-dynamic-bridge-linux-amd64.txt) |
+| CGO static | Stock official engine linked into the executable | [raw](results/2026-11-05-current-cgo-linux-amd64.txt) |
 
-The [generated combined report](results/2026-11-04-scalar-exec-combined-linux-amd64.md) is reproduced
+The [generated combined report](results/2026-11-05-current-combined-linux-amd64.md) is reproduced
 below: all 18 workloads, seven configuration/control columns, time, Go memory and
 throughput. mattn/modernc display columns pool **25 samples** per workload. Every
 native ratio uses its own run's five matching controls; matching control medians
-are included. Compiler and engine differences remain in the full comparison.
+are included. The [complete 35-workload report](results/2026-11-05-current-all-workloads-linux-amd64.md)
+also contains all compatibility cases from the same raw logs. Compiler and
+engine differences remain in the full comparison.
 
 <!-- BEGIN GENERATED COMBINED RESULTS -->
 
@@ -197,70 +205,70 @@ mattn and modernc columns pool controls across runs; each native backend's ratio
 
 | Workload | PureGo standard | PureGo embed | CGO dynamic standard | CGO dynamic embed | CGO static | mattn | modernc.org/sqlite |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| OpenClose | 116,482 (1.00x) | 115,538 (0.98x) | 105,995 (0.87x) | 105,661 (0.92x) | 104,703 (0.90x) | 116,789 | 185,491 (1.59x) |
-| SelectConstant | 3,511 (1.10x) | 3,461 (1.07x) | 2,964 (0.90x) | 3,095 (0.91x) | 2,924 (0.90x) | 3,254 | 3,438 (1.06x) |
-| SingleInsert | 13,312 (1.04x) | 13,245 (1.04x) | 12,583 (0.98x) | 12,803 (0.99x) | 12,685 (0.99x) | 12,827 | 16,909 (1.32x) |
-| PreparedInsert | 10,784 (1.06x) | 10,503 (1.05x) | 10,353 (1.01x) | 10,301 (1.01x) | 10,134 (1.00x) | 10,180 | 13,345 (1.31x) |
-| BatchInsert1000 | 1,289,197 (1.36x) | 919,011 (0.97x) | 938,805 (0.95x) | 883,438 (0.90x) | 902,249 (0.97x) | 953,197 | 1,242,374 (1.30x) |
-| BatchInsert1000Values | 405,834 (1.23x) | 301,324 (0.90x) | 333,284 (1.01x) | 301,358 (0.89x) | 346,286 (1.01x) | 336,485 | 577,094 (1.72x) |
-| TransactionInsert100000 | 122,811,867 (1.35x) | 86,976,446 (0.96x) | 87,931,772 (0.93x) | 82,326,803 (0.88x) | 83,786,734 (0.94x) | 91,089,861 | 119,996,430 (1.32x) |
-| SingleRowSelect | 9,168 (1.06x) | 8,869 (1.01x) | 8,113 (0.95x) | 8,195 (0.93x) | 8,110 (0.96x) | 8,628 | 12,498 (1.45x) |
-| FullScan1000 | 1,427,835 (1.97x) | 834,058 (1.18x) | 883,841 (1.20x) | 715,752 (1.01x) | 884,529 (1.27x) | 713,206 | 696,488 (0.98x) |
-| IndexedLookup | 9,087 (1.04x) | 9,443 (1.03x) | 8,369 (0.96x) | 8,669 (0.94x) | 8,267 (0.94x) | 8,830 | 14,074 (1.59x) |
-| LargeTextRead | 226,560 (0.78x) | 262,312 (0.87x) | 357,331 (1.08x) | 338,473 (1.02x) | 313,999 (1.00x) | 308,290 | 288,638 (0.94x) |
-| LargeTextWrite | 98,794 (1.01x) | 99,148 (0.86x) | 103,244 (1.05x) | 95,470 (0.99x) | 98,538 (0.86x) | 98,414 | 132,913 (1.35x) |
-| LargeBlobRead | 697,134 (0.99x) | 649,204 (1.10x) | 659,079 (1.20x) | 709,540 (0.93x) | 746,521 (1.13x) | 640,678 | 686,876 (1.07x) |
-| LargeBlobWrite | 122,231 (1.28x) | 123,120 (0.97x) | 124,033 (1.23x) | 95,525 (0.98x) | 121,477 (1.04x) | 100,799 | 131,096 (1.30x) |
-| WALReaders | 4,599 (0.99x) | 4,467 (0.98x) | 4,213 (0.93x) | 4,276 (0.94x) | 4,224 (0.96x) | 4,491 | 5,995 (1.33x) |
-| WALWriterContention | 15,119 (1.12x) | 15,588 (1.09x) | 14,185 (1.06x) | 15,096 (1.10x) | 16,434 (1.12x) | 13,891 | 22,816 (1.64x) |
-| FTS5Search | 51,561 (1.01x) | 57,646 (1.00x) | 49,681 (1.00x) | 57,531 (0.99x) | 50,201 (1.00x) | 51,063 | 100,471 (1.97x) |
-| JSONQuery | 5,538 (1.06x) | 5,594 (1.07x) | 4,871 (0.94x) | 5,009 (0.94x) | 4,761 (0.96x) | 5,222 | 6,886 (1.32x) |
+| OpenClose | 79,753 (1.01x) | 82,143 (1.00x) | 70,563 (0.86x) | 73,371 (0.90x) | 68,887 (0.86x) | 80,621 | 125,354 (1.55x) |
+| SelectConstant | 2,652 (1.09x) | 2,522 (1.08x) | 2,243 (0.92x) | 2,165 (0.92x) | 2,173 (0.92x) | 2,370 | 2,500 (1.05x) |
+| SingleInsert | 11,523 (1.04x) | 11,185 (1.02x) | 11,042 (0.99x) | 10,932 (0.99x) | 10,890 (0.98x) | 11,080 | 14,091 (1.27x) |
+| PreparedInsert | 9,874 (1.06x) | 9,591 (1.03x) | 9,388 (1.02x) | 9,373 (1.01x) | 9,322 (1.01x) | 9,280 | 12,085 (1.30x) |
+| BatchInsert1000 | 967,138 (1.41x) | 712,355 (1.04x) | 640,406 (0.95x) | 630,679 (0.90x) | 651,612 (0.97x) | 683,390 | 945,045 (1.38x) |
+| BatchInsert1000Values | 296,404 (1.23x) | 214,334 (0.89x) | 244,823 (1.02x) | 214,319 (0.91x) | 244,622 (1.01x) | 241,579 | 410,514 (1.70x) |
+| TransactionInsert100000 | 94,712,238 (1.43x) | 68,821,052 (1.02x) | 61,771,654 (0.95x) | 61,288,382 (0.90x) | 62,115,014 (0.97x) | 66,182,226 | 95,049,711 (1.44x) |
+| SingleRowSelect | 7,041 (1.07x) | 6,685 (1.03x) | 6,631 (0.97x) | 6,180 (0.95x) | 6,448 (0.96x) | 6,560 | 8,391 (1.28x) |
+| FullScan1000 | 1,004,743 (2.05x) | 597,124 (1.22x) | 610,874 (1.25x) | 512,133 (1.04x) | 612,684 (1.35x) | 489,380 | 465,437 (0.95x) |
+| IndexedLookup | 6,862 (1.05x) | 6,802 (1.05x) | 6,537 (0.97x) | 6,337 (0.97x) | 6,514 (0.98x) | 6,557 | 8,607 (1.31x) |
+| LargeTextRead | 193,265 (1.08x) | 155,403 (0.99x) | 185,676 (1.09x) | 219,526 (1.05x) | 230,467 (1.04x) | 181,408 | 194,340 (1.07x) |
+| LargeTextWrite | 90,189 (0.48x) | 91,380 (1.02x) | 88,545 (1.00x) | 88,808 (1.02x) | 88,611 (1.00x) | 88,619 | 103,457 (1.17x) |
+| LargeBlobRead | 392,937 (1.05x) | 509,115 (1.09x) | 429,488 (1.18x) | 473,831 (1.08x) | 451,190 (1.04x) | 420,232 | 473,127 (1.13x) |
+| LargeBlobWrite | 98,177 (1.10x) | 88,776 (1.02x) | 90,144 (1.02x) | 89,621 (1.00x) | 91,002 (1.02x) | 88,941 | 103,707 (1.17x) |
+| WALReaders | 3,276 (1.00x) | 3,221 (0.99x) | 3,137 (0.95x) | 3,111 (0.93x) | 3,210 (0.97x) | 3,301 | 3,619 (1.10x) |
+| WALWriterContention | 13,193 (1.10x) | 13,287 (1.15x) | 12,833 (1.12x) | 12,046 (1.03x) | 12,324 (1.06x) | 11,752 | 18,194 (1.55x) |
+| FTS5Search | 39,368 (0.99x) | 43,812 (1.02x) | 38,971 (0.99x) | 42,721 (0.98x) | 38,399 (1.00x) | 40,545 | 71,678 (1.77x) |
+| JSONQuery | 4,053 (1.10x) | 3,806 (1.08x) | 3,440 (0.97x) | 3,414 (0.96x) | 3,389 (0.96x) | 3,549 | 4,653 (1.31x) |
 
 ### Go memory: B/op / allocs/op
 
 | Workload | PureGo standard | PureGo embed | CGO dynamic standard | CGO dynamic embed | CGO static | mattn | modernc.org/sqlite |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| OpenClose | 4,373 / 95 | 4,556 / 104 | 2,583 / 36 | 2,584 / 36 | 2,571 / 36 | 2,978 / 64 | 4,600 / 83 |
-| SelectConstant | 520 / 15 | 520 / 15 | 472 / 15 | 472 / 15 | 472 / 15 | 536 / 14 | 480 / 13 |
-| SingleInsert | 280 / 8 | 280 / 8 | 232 / 7 | 232 / 7 | 232 / 7 | 224 / 7 | 124 / 5 |
+| OpenClose | 5,120 / 105 | 5,304 / 114 | 2,910 / 36 | 2,911 / 36 | 2,894 / 36 | 2,979 / 64 | 4,610 / 84 |
+| SelectConstant | 536 / 15 | 536 / 15 | 488 / 15 | 488 / 15 | 488 / 15 | 536 / 14 | 480 / 13 |
+| SingleInsert | 296 / 8 | 296 / 8 | 248 / 7 | 248 / 7 | 248 / 7 | 224 / 7 | 124 / 5 |
 | PreparedInsert | 112 / 4 | 112 / 4 | 112 / 4 | 112 / 4 | 112 / 4 | 128 / 5 | 116 / 5 |
-| BatchInsert1000 | 125,196 / 5,516 | 125,190 / 5,516 | 125,020 / 5,513 | 125,014 / 5,513 | 125,012 / 5,513 | 140,774 / 6,508 | 131,643 / 6,502 |
-| BatchInsert1000Values | 42,296 / 32 | 42,290 / 32 | 42,135 / 29 | 42,139 / 29 | 42,142 / 29 | 41,902 / 25 | 41,791 / 19 |
-| TransactionInsert100000 | 12,800,008 / 599,526 | 12,799,650 / 599,526 | 12,797,016 / 599,513 | 12,797,020 / 599,513 | 12,797,020 / 599,513 | 14,396,768 / 699,508 | 13,595,650 / 699,502 |
-| SingleRowSelect | 704 / 24 | 704 / 24 | 640 / 23 | 640 / 23 | 640 / 23 | 736 / 26 | 672 / 24 |
-| FullScan1000 | 82,470 / 7,304 | 82,474 / 7,304 | 82,408 / 7,303 | 82,408 / 7,303 | 82,408 / 7,303 | 82,520 / 7,308 | 82,440 / 7,305 |
-| IndexedLookup | 640 / 20 | 640 / 20 | 536 / 18 | 536 / 18 | 536 / 18 | 616 / 19 | 568 / 19 |
-| LargeTextRead | 1,049,371 / 18 | 1,049,376 / 18 | 1,049,082 / 17 | 1,049,084 / 17 | 1,049,085 / 17 | 1,049,141 / 16 | 1,049,094 / 16 |
+| BatchInsert1000 | 125,239 / 5,516 | 125,233 / 5,516 | 125,063 / 5,513 | 125,077 / 5,513 | 125,073 / 5,513 | 140,778 / 6,508 | 131,643 / 6,502 |
+| BatchInsert1000Values | 42,335 / 32 | 42,334 / 32 | 42,184 / 29 | 42,181 / 29 | 42,186 / 29 | 41,901 / 25 | 41,788 / 19 |
+| TransactionInsert100000 | 12,799,644 / 599,525 | 12,799,870 / 599,527 | 12,797,062 / 599,513 | 12,797,068 / 599,513 | 12,797,062 / 599,513 | 14,396,769 / 699,508 | 13,595,652 / 699,502 |
+| SingleRowSelect | 720 / 24 | 720 / 24 | 656 / 23 | 656 / 23 | 656 / 23 | 736 / 26 | 672 / 24 |
+| FullScan1000 | 82,490 / 7,304 | 82,490 / 7,304 | 82,424 / 7,303 | 82,424 / 7,303 | 82,424 / 7,303 | 82,520 / 7,308 | 82,440 / 7,305 |
+| IndexedLookup | 656 / 20 | 656 / 20 | 552 / 18 | 552 / 18 | 552 / 18 | 616 / 19 | 568 / 19 |
+| LargeTextRead | 1,049,393 / 18 | 1,049,364 / 18 | 1,049,101 / 17 | 1,049,102 / 17 | 1,049,103 / 17 | 1,049,140 / 16 | 1,049,092 / 16 |
 | LargeTextWrite | 160 / 5 | 160 / 5 | 112 / 4 | 112 / 4 | 112 / 4 | 128 / 5 | 132 / 6 |
-| LargeBlobRead | 2,098,220 / 20 | 2,098,210 / 20 | 2,097,682 / 18 | 2,097,681 / 18 | 2,097,684 / 18 | 2,097,743 / 17 | 2,097,692 / 17 |
+| LargeBlobRead | 2,098,223 / 20 | 2,098,216 / 20 | 2,097,699 / 18 | 2,097,700 / 18 | 2,097,699 / 18 | 2,097,741 / 17 | 2,097,690 / 17 |
 | LargeBlobWrite | 160 / 5 | 160 / 5 | 112 / 4 | 112 / 4 | 112 / 4 | 128 / 5 | 132 / 6 |
-| WALReaders | 544 / 18 | 544 / 18 | 496 / 17 | 496 / 17 | 496 / 17 | 568 / 18 | 512 / 17 |
-| WALWriterContention | 232 / 7 | 232 / 7 | 184 / 6 | 184 / 6 | 184 / 6 | 72 / 4 | 76 / 4 |
-| FTS5Search | 640 / 20 | 640 / 20 | 544 / 18 | 544 / 18 | 544 / 18 | 600 / 17 | 568 / 18 |
-| JSONQuery | 648 / 18 | 648 / 18 | 552 / 16 | 552 / 16 | 552 / 16 | 608 / 15 | 576 / 16 |
+| WALReaders | 560 / 18 | 560 / 18 | 512 / 17 | 512 / 17 | 512 / 17 | 568 / 18 | 512 / 17 |
+| WALWriterContention | 248 / 7 | 248 / 7 | 200 / 6 | 200 / 6 | 200 / 6 | 72 / 4 | 76 / 4 |
+| FTS5Search | 656 / 20 | 656 / 20 | 560 / 18 | 560 / 18 | 560 / 18 | 600 / 17 | 568 / 18 |
+| JSONQuery | 664 / 18 | 664 / 18 | 568 / 16 | 568 / 16 | 568 / 16 | 608 / 15 | 576 / 16 |
 
 ### Throughput: benchmark units/s
 
 | Workload | PureGo standard | PureGo embed | CGO dynamic standard | CGO dynamic embed | CGO static | mattn | modernc.org/sqlite |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| OpenClose | 8,585 | 8,655 | 9,434 | 9,464 | 9,551 | 8,562 | 5,391 |
-| SelectConstant | 284,801 | 288,939 | 337,407 | 323,052 | 342,001 | 307,303 | 290,872 |
-| SingleInsert | 75,118 | 75,502 | 79,472 | 78,107 | 78,834 | 77,960 | 59,140 |
-| PreparedInsert | 92,729 | 95,207 | 96,587 | 97,078 | 98,676 | 98,235 | 74,932 |
-| BatchInsert1000 | 776 | 1,088 | 1,065 | 1,132 | 1,108 | 1,049 | 805 |
-| BatchInsert1000Values | 2,464 | 3,319 | 3,000 | 3,318 | 2,888 | 2,972 | 1,733 |
-| TransactionInsert100000 | 8 | 12 | 11 | 12 | 12 | 11 | 8 |
-| SingleRowSelect | 109,079 | 112,752 | 123,262 | 122,021 | 123,300 | 115,901 | 80,012 |
-| FullScan1000 | 700 | 1,199 | 1,131 | 1,397 | 1,131 | 1,402 | 1,436 |
-| IndexedLookup | 110,051 | 105,895 | 119,489 | 115,360 | 120,962 | 113,250 | 71,052 |
-| LargeTextRead | 4,414 | 3,812 | 2,799 | 2,954 | 3,185 | 3,244 | 3,465 |
-| LargeTextWrite | 10,122 | 10,086 | 9,686 | 10,474 | 10,148 | 10,161 | 7,524 |
-| LargeBlobRead | 1,434 | 1,540 | 1,517 | 1,409 | 1,340 | 1,561 | 1,456 |
-| LargeBlobWrite | 8,181 | 8,122 | 8,062 | 10,468 | 8,232 | 9,921 | 7,628 |
-| WALReaders | 217,423 | 223,881 | 237,344 | 233,883 | 236,720 | 222,689 | 166,801 |
-| WALWriterContention | 66,143 | 64,150 | 70,495 | 66,242 | 60,849 | 71,990 | 43,828 |
-| FTS5Search | 19,395 | 17,347 | 20,128 | 17,382 | 19,920 | 19,584 | 9,953 |
-| JSONQuery | 180,572 | 178,768 | 205,306 | 199,647 | 210,048 | 191,486 | 145,215 |
+| OpenClose | 12,539 | 12,174 | 14,172 | 13,629 | 14,517 | 12,404 | 7,977 |
+| SelectConstant | 377,064 | 396,471 | 445,771 | 461,958 | 460,111 | 421,893 | 400,009 |
+| SingleInsert | 86,785 | 89,406 | 90,567 | 91,473 | 91,831 | 90,253 | 70,966 |
+| PreparedInsert | 101,271 | 104,264 | 106,519 | 106,688 | 107,271 | 107,756 | 82,747 |
+| BatchInsert1000 | 1,034 | 1,404 | 1,562 | 1,586 | 1,535 | 1,463 | 1,058 |
+| BatchInsert1000Values | 3,374 | 4,666 | 4,085 | 4,666 | 4,088 | 4,139 | 2,436 |
+| TransactionInsert100000 | 11 | 15 | 16 | 16 | 16 | 15 | 11 |
+| SingleRowSelect | 142,024 | 149,588 | 150,818 | 161,818 | 155,097 | 152,448 | 119,168 |
+| FullScan1000 | 995 | 1,675 | 1,637 | 1,953 | 1,632 | 2,043 | 2,149 |
+| IndexedLookup | 145,728 | 147,017 | 152,985 | 157,805 | 153,515 | 152,510 | 116,188 |
+| LargeTextRead | 5,174 | 6,435 | 5,386 | 4,555 | 4,339 | 5,512 | 5,146 |
+| LargeTextWrite | 11,088 | 10,943 | 11,294 | 11,260 | 11,285 | 11,284 | 9,666 |
+| LargeBlobRead | 2,545 | 1,964 | 2,328 | 2,110 | 2,216 | 2,380 | 2,114 |
+| LargeBlobWrite | 10,186 | 11,264 | 11,093 | 11,158 | 10,989 | 11,243 | 9,643 |
+| WALReaders | 305,235 | 310,494 | 318,752 | 321,436 | 311,532 | 302,917 | 276,330 |
+| WALWriterContention | 75,796 | 75,261 | 77,923 | 83,012 | 81,141 | 85,091 | 54,962 |
+| FTS5Search | 25,401 | 22,825 | 25,660 | 23,408 | 26,043 | 24,664 | 13,951 |
+| JSONQuery | 246,761 | 262,720 | 290,739 | 292,883 | 295,099 | 281,792 | 214,932 |
 
 ### Native time / matching-run modernc
 
@@ -268,24 +276,24 @@ Each cell shows the time ratio and matching modernc median in ns/op; lower ratio
 
 | Workload | PureGo standard | PureGo embed | CGO dynamic standard | CGO dynamic embed | CGO static |
 |---|---:|---:|---:|---:|---:|
-| OpenClose | 0.65x (178,524) | 0.62x (185,502) | 0.57x (186,614) | 0.57x (186,023) | 0.56x (185,491) |
-| SelectConstant | 1.02x (3,441) | 1.01x (3,443) | 0.86x (3,440) | 0.89x (3,461) | 0.87x (3,371) |
-| SingleInsert | 0.81x (16,510) | 0.78x (16,908) | 0.73x (17,339) | 0.73x (17,632) | 0.77x (16,526) |
-| PreparedInsert | 0.81x (13,242) | 0.80x (13,099) | 0.76x (13,565) | 0.76x (13,502) | 0.76x (13,310) |
-| BatchInsert1000 | 1.07x (1,199,451) | 0.76x (1,213,012) | 0.75x (1,249,421) | 0.71x (1,244,474) | 0.72x (1,248,372) |
-| BatchInsert1000Values | 0.68x (596,483) | 0.54x (555,818) | 0.58x (573,117) | 0.52x (577,094) | 0.60x (577,245) |
-| TransactionInsert100000 | 1.06x (115,504,156) | 0.74x (117,170,010) | 0.73x (120,802,111) | 0.68x (121,535,230) | 0.70x (120,368,158) |
-| SingleRowSelect | 0.75x (12,221) | 0.72x (12,402) | 0.65x (12,567) | 0.64x (12,904) | 0.67x (12,172) |
-| FullScan1000 | 2.10x (680,705) | 1.21x (690,819) | 1.24x (710,079) | 1.01x (708,746) | 1.27x (696,488) |
-| IndexedLookup | 0.66x (13,751) | 0.67x (14,074) | 0.58x (14,389) | 0.60x (14,465) | 0.59x (13,921) |
-| LargeTextRead | 0.78x (288,638) | 0.79x (333,723) | 1.37x (261,248) | 1.03x (328,378) | 1.15x (272,243) |
-| LargeTextWrite | 0.78x (127,348) | 0.70x (141,035) | 0.87x (118,219) | 0.72x (132,583) | 0.71x (138,183) |
-| LargeBlobRead | 0.87x (799,440) | 0.89x (727,834) | 0.97x (677,825) | 1.06x (671,891) | 1.13x (658,703) |
-| LargeBlobWrite | 0.84x (144,688) | 0.88x (140,516) | 1.04x (118,952) | 0.73x (131,735) | 1.03x (118,456) |
-| WALReaders | 0.77x (6,001) | 0.74x (6,052) | 0.74x (5,701) | 0.72x (5,979) | 0.70x (6,067) |
-| WALWriterContention | 0.62x (24,578) | 0.71x (22,079) | 0.62x (22,816) | 0.63x (24,099) | 0.74x (22,317) |
-| FTS5Search | 0.53x (97,768) | 0.58x (99,855) | 0.49x (100,982) | 0.57x (100,829) | 0.50x (101,015) |
-| JSONQuery | 0.83x (6,685) | 0.81x (6,927) | 0.71x (6,869) | 0.73x (6,898) | 0.69x (6,887) |
+| OpenClose | 0.64x (125,354) | 0.67x (122,983) | 0.56x (125,102) | 0.58x (126,709) | 0.55x (125,024) |
+| SelectConstant | 1.05x (2,529) | 1.00x (2,533) | 0.93x (2,423) | 0.88x (2,448) | 0.87x (2,500) |
+| SingleInsert | 0.82x (13,999) | 0.80x (14,047) | 0.78x (14,171) | 0.78x (14,099) | 0.77x (14,096) |
+| PreparedInsert | 0.83x (11,968) | 0.80x (12,034) | 0.78x (12,113) | 0.78x (12,089) | 0.77x (12,095) |
+| BatchInsert1000 | 1.02x (944,613) | 0.75x (951,270) | 0.68x (938,976) | 0.65x (963,417) | 0.70x (928,040) |
+| BatchInsert1000Values | 0.71x (415,614) | 0.54x (400,540) | 0.60x (408,556) | 0.53x (405,110) | 0.57x (426,323) |
+| TransactionInsert100000 | 1.01x (93,717,855) | 0.72x (95,247,937) | 0.65x (95,751,215) | 0.63x (96,713,115) | 0.67x (93,290,920) |
+| SingleRowSelect | 0.84x (8,384) | 0.80x (8,357) | 0.78x (8,493) | 0.74x (8,380) | 0.76x (8,474) |
+| FullScan1000 | 1.90x (528,462) | 1.32x (452,853) | 1.32x (463,993) | 1.11x (462,710) | 1.29x (475,830) |
+| IndexedLookup | 0.80x (8,590) | 0.79x (8,605) | 0.76x (8,626) | 0.74x (8,576) | 0.75x (8,726) |
+| LargeTextRead | 0.95x (203,181) | 0.76x (205,559) | 1.08x (172,397) | 1.14x (192,367) | 1.17x (196,948) |
+| LargeTextWrite | 0.86x (104,981) | 0.87x (104,925) | 0.88x (100,929) | 0.86x (103,457) | 0.89x (99,992) |
+| LargeBlobRead | 1.07x (366,280) | 0.95x (534,870) | 1.26x (340,373) | 0.92x (512,773) | 0.93x (485,396) |
+| LargeBlobWrite | 0.94x (104,662) | 0.85x (104,467) | 0.89x (100,912) | 0.86x (103,707) | 0.91x (99,619) |
+| WALReaders | 0.89x (3,662) | 0.89x (3,619) | 0.91x (3,450) | 0.85x (3,646) | 0.88x (3,668) |
+| WALWriterContention | 0.68x (19,465) | 0.73x (18,162) | 0.66x (19,328) | 0.73x (16,416) | 0.70x (17,730) |
+| FTS5Search | 0.55x (71,606) | 0.61x (71,729) | 0.55x (70,454) | 0.57x (74,609) | 0.53x (71,841) |
+| JSONQuery | 0.85x (4,762) | 0.81x (4,687) | 0.75x (4,575) | 0.73x (4,653) | 0.73x (4,638) |
 
 ### Matching mattn controls: ns/op
 
@@ -293,45 +301,45 @@ These medians are the denominators for the native backend ratios above.
 
 | Workload | PureGo standard run | PureGo embed run | CGO dynamic standard run | CGO dynamic embed run | CGO static run |
 |---|---:|---:|---:|---:|---:|
-| OpenClose | 116,585 | 117,669 | 121,456 | 115,343 | 116,367 |
-| SelectConstant | 3,200 | 3,230 | 3,296 | 3,416 | 3,243 |
-| SingleInsert | 12,794 | 12,742 | 12,827 | 12,873 | 12,776 |
-| PreparedInsert | 10,128 | 9,968 | 10,292 | 10,234 | 10,118 |
-| BatchInsert1000 | 950,897 | 949,404 | 993,372 | 984,479 | 927,318 |
-| BatchInsert1000Values | 330,857 | 336,485 | 329,598 | 340,357 | 343,441 |
-| TransactionInsert100000 | 90,715,522 | 90,967,956 | 94,382,388 | 93,728,142 | 88,864,160 |
-| SingleRowSelect | 8,628 | 8,747 | 8,539 | 8,829 | 8,492 |
-| FullScan1000 | 726,507 | 705,775 | 738,569 | 710,274 | 698,407 |
-| IndexedLookup | 8,719 | 9,183 | 8,707 | 9,243 | 8,790 |
-| LargeTextRead | 288,769 | 301,981 | 329,992 | 333,116 | 313,809 |
-| LargeTextWrite | 97,476 | 115,735 | 98,522 | 96,383 | 114,820 |
-| LargeBlobRead | 701,691 | 590,981 | 551,365 | 759,552 | 662,476 |
-| LargeBlobWrite | 95,792 | 127,186 | 100,799 | 97,475 | 116,643 |
-| WALReaders | 4,636 | 4,554 | 4,516 | 4,543 | 4,396 |
-| WALWriterContention | 13,455 | 14,281 | 13,359 | 13,763 | 14,610 |
-| FTS5Search | 51,043 | 57,591 | 49,564 | 58,292 | 50,258 |
-| JSONQuery | 5,236 | 5,230 | 5,182 | 5,303 | 4,973 |
+| OpenClose | 79,163 | 82,214 | 81,731 | 81,445 | 80,377 |
+| SelectConstant | 2,426 | 2,346 | 2,438 | 2,347 | 2,369 |
+| SingleInsert | 11,099 | 10,970 | 11,189 | 11,080 | 11,058 |
+| PreparedInsert | 9,277 | 9,352 | 9,232 | 9,284 | 9,223 |
+| BatchInsert1000 | 687,215 | 683,390 | 674,157 | 701,361 | 669,220 |
+| BatchInsert1000Values | 241,579 | 241,704 | 240,419 | 236,597 | 243,336 |
+| TransactionInsert100000 | 66,182,226 | 67,399,237 | 65,321,080 | 68,217,387 | 64,278,950 |
+| SingleRowSelect | 6,560 | 6,510 | 6,846 | 6,479 | 6,694 |
+| FullScan1000 | 489,496 | 488,461 | 490,027 | 493,096 | 452,646 |
+| IndexedLookup | 6,557 | 6,497 | 6,772 | 6,515 | 6,622 |
+| LargeTextRead | 179,027 | 157,057 | 170,724 | 209,101 | 221,291 |
+| LargeTextWrite | 188,974 | 89,674 | 88,216 | 87,301 | 88,533 |
+| LargeBlobRead | 373,618 | 465,574 | 364,308 | 440,513 | 432,662 |
+| LargeBlobWrite | 88,979 | 87,299 | 88,346 | 89,730 | 88,941 |
+| WALReaders | 3,281 | 3,252 | 3,301 | 3,342 | 3,314 |
+| WALWriterContention | 11,990 | 11,575 | 11,491 | 11,752 | 11,644 |
+| FTS5Search | 39,702 | 42,928 | 39,286 | 43,555 | 38,517 |
+| JSONQuery | 3,671 | 3,520 | 3,557 | 3,558 | 3,534 |
 
 <!-- END GENERATED COMBINED RESULTS -->
 
 ## Optional row-reader evidence
 
 The embed columns use the actual Linux amd64 glibc asset from embed commit
-`d721bc5`, built by [candidate workflow run](https://github.com/yuhaiin/purego-sqlite-embed/actions/runs/41793502034).
+`d721bc5`, built by [asset workflow run](https://github.com/yuhaiin/purego-sqlite-embed/actions/runs/41793502034).
 Both embed configurations report row and scalar bridge features; standard/static
-configurations report neither. The [manifest](results/2026-11-04-scalar-exec-environment.json)
+configurations report neither. The [manifest](results/2026-11-05-current-environment.json)
 records the exact binary hash and compiler. glibc 2.17 runtime compatibility is
 validated independently from these performance measurements.
 
-A [same-library CGO-free comparison](results/2026-11-04-scalar-exec-matched-purego.txt)
+A [same-library CGO-free comparison](results/2026-11-05-current-matched-purego.txt)
 uses the identical distributed asset, connection settings and database/sql scan
 loop, disabling only ReadRow. Seven 500ms samples give FullScan1000 medians of
-**1,359,325ns standard** and **828,726ns with the reader**: approximately
-**39.0% less time**, or **1.64x throughput**.
+**1,016,805ns standard** and **582,408ns with the reader**: approximately
+**42.7% less time**, or **1.75x throughput**.
 This isolates the reader from compiler/engine differences in the full table.
 
-In the full embed run, PureGo takes 834,058ns versus matching mattn
-705,775ns and modernc 690,819ns, time ratios **1.18x** and **1.21x**.
+In the full embed run, PureGo takes 597,124ns versus matching mattn
+488,461ns and modernc 452,853ns, time ratios **1.22x** and **1.32x**.
 Universal performance parity is not claimed.
 
 The reader reduces the three-column row from about eight boundary crossings to
@@ -340,13 +348,6 @@ strings and BLOBs are copied before advancing/resetting/finalizing. Each
 connection owns reusable SQLite-allocated scratch, 24 bytes per cached column
 plus allocator overhead, freed on Close. It is excluded from Go heap counters.
 This is not a zero-copy payload API.
-
-An initial [variadic-frame probe](results/2026-11-04-row-bridge-matched-purego.txt)
-added about 1000 Go allocations per scan. A [Go-buffer pinning probe](results/2026-11-04-row-bridge-pinned-buffer-purego.txt)
-removed these but increased time, and was rejected. The final implementation
-uses native scratch with a private scalar frame per connection. A preliminary
-[full GCC-fixture run](results/2026-11-04-row-bridge-fixture-purego-linux-amd64.txt)
-is retained separately and excluded from the combined report.
 
 To reproduce the controlled comparison:
 
@@ -362,7 +363,7 @@ from the embed asset and `src/sqlite3.h` from its matching pinned source, then
 use the commands above. To build a local fixture instead:
 
 ```sh
-python3 scripts/build-native.py --row-bridge --exec-bridge --output .native/row-bridge
+go run ./internal/cmd/build-native --row-bridge --exec-bridge --output .native/row-bridge
 ```
 
 Select that directory for the library. Its GCC engine differs from the
@@ -378,14 +379,14 @@ It applies to ordinary single statements as well as batches: the driver does not
 recognize benchmark names, table names, SQL templates or batch sizes. TEXT/BLOB,
 named arguments and Query use the existing path. The official engine is unchanged.
 
-A [same-library A/B run](results/2026-11-04-scalar-exec-matched-purego.txt) uses the identical
+A [same-library A/B run](results/2026-11-05-current-matched-purego.txt) uses the identical
 distributed asset, file database, WAL settings, CPU affinity and database/sql
 transaction loop, disabling only ExecScalar in the standard case. With
 CGO_ENABLED=0 and seven 500ms samples per case, median times are:
 
-- `BatchInsert1000`: 1,304,440 → 934,988 ns (28.3% less time).
-- `BatchInsert1000Values`: 397,078 → 298,606 ns (24.8% less time).
-- `TransactionInsert100000`: 125,327,532 → 88,825,819 ns (29.1% less time).
+- `BatchInsert1000`: 1,000,004 → 702,699 ns (29.7% less time).
+- `BatchInsert1000Values`: 299,818 → 216,763 ns (27.7% less time).
+- `TransactionInsert100000`: 97,282,504 → 68,121,248 ns (30.0% less time).
 
 This isolates the scalar executor from compiler/engine differences. Reproduce
 against the selected asset with:
@@ -409,9 +410,6 @@ statement reuse. A failed helper never falls through to another execution.
 
 ## Standard-API optimization and remaining overhead
 
-[Targeted before/after probes and rejected experiments](results/2026-11-04-optimization-probes.md)
-record the intermediate measurements; they are excluded from the final table.
-
 The standard columns above use **standard public SQLite symbols**. They work with system
 SQLite; no custom exports, patched `.so`, SQLite private layouts or additional
 native helper library are required. The system library at `/usr/lib/libsqlite3.so.0`
@@ -434,8 +432,9 @@ PureGo improvements:
 - Prepare, TEXT/BLOB binding and metadata reads avoid reflective conversion.
   Go buffer arguments retain direct `SyscallN` lifetime tracking. Floating-point
   arguments/returns keep their typed ABI bindings.
-- Column declaration types are loaded only when `ColumnTypes` requests them,
-  and refreshed after each query's initial step/reprepare. Parameter names are
+- Column declaration types are loaded when `ColumnTypes` or opt-in
+  `WithMattnTypes` decoding needs them, and refreshed after each query's initial
+  step/reprepare. Parameter names are
   loaded only for named arguments or detailed validation errors.
 - Prepare reuses at most 4 KiB of NUL-terminated SQL scratch space per connection.
   SQLite retains its own SQL copy. Large inputs use temporary storage, and Close
@@ -447,26 +446,22 @@ PureGo improvements:
 - A conservative leading DML keyword hint avoids repeatedly asking whether a
   plain INSERT/UPDATE/DELETE/REPLACE is readonly. Other SQL, including leading
   comments, CTEs, PRAGMAs and EXPLAIN, still uses the native readonly check.
-  Prepared scalar INSERTs using the standard API need **five native calls per row** instead of seven. Libraries with the scalar executor below combine them into one.
+  Prepared scalar INSERTs using the standard API need **five native calls per row** instead of seven. Libraries with the scalar executor described above combine them into one.
 
 Regression tests cover metadata copies after native finalization, Unicode names,
 NULL declaration types, automatic schema reprepare, preserved SQL after scratch
 reuse, positional/named mode changes, partial rebinds, constraint failures,
 RETURNING/SELECT draining, late errors, cancellation and concurrent connections.
 
-The archived pre-optimization scan used **19,348 Go allocations per 1000 rows**.
-The latest path uses about **7,304**, comparable to mattn's 7,308 and modernc's
-7,305. Ordinary single-row SELECT allocations fall from 74 to about 24. Lower
-allocation counts do not guarantee timing parity.
+The current SQL table uses **7,304 Go allocations per 1000 rows**, compared
+with mattn's 7,308 and modernc's 7,305. Ordinary single-row SELECT uses 24
+allocations in this run. Allocation counts alone do not establish timing parity.
 
 Without the optional bridge, the three-column scan needs about **eight native calls per row**: step,
-three type reads, two integer reads, TEXT pointer and TEXT length. The profile
-attributes about 66% of CPU samples to the `SyscallN` call stack, including
-native execution; this must not all be interpreted as boundary overhead. The
-remaining transition/marshalling cost matters when engine work per call is small.
-An experiment removing one Go call-frame closure showed no convincing scan
-improvement and was not retained. No correctness checks, native data copies or
-connection lifetime synchronization were removed to improve the numbers.
+three type reads, two integer reads, TEXT pointer and TEXT length. Transition
+and marshalling costs matter when the engine does little work per native call.
+The driver retains storage-class checks, owned data copies and connection
+lifetime synchronization.
 
 The 1000-row VALUES case and the original 1000-execution case deliberately remain
 separate. They illustrate different SQL shapes, including parse/binding costs;
@@ -474,36 +469,8 @@ the driver does not rewrite statements or silently batch operations. The results
 support workload-specific comparisons, not an assumption that a native engine
 must win every `database/sql` workload.
 
-## Historical measurements
+## Results retention
 
-These files record earlier implementations and are retained for comparison;
-they are not the current result table:
-
-- [Earlier combined Ryzen results](results/2026-11-04-combined-linux-amd64.md)
-  and [environment](results/2026-11-04-combined-environment.json), before the scalar executor.
-
-- [2026-11-04 pre-optimization CGO](results/2026-11-04-cgo-linux-amd64.md)
-  and [raw samples](results/2026-11-04-cgo-linux-amd64.txt).
-- [2026-11-04 pre-optimization PureGo](results/2026-11-04-purego-linux-amd64.md)
-  and [raw samples](results/2026-11-04-purego-linux-amd64.txt).
-- [2026-11-03 PureGo](results/2026-11-03-linux-amd64.md),
-  [raw samples](results/2026-11-03-linux-amd64.txt), and
-  [native manifest](results/2026-11-03-native-manifest.json).
-- The first integer FFI experiment used GOMAXPROCS=12:
-  [before](results/2026-11-03-before-fast-ffi.txt) and
-  [after](results/2026-11-03-after-fast-ffi.txt). Its concurrency timings are not
-  directly comparable to GOMAXPROCS=4 runs.
-
-The first five-way iteration, before the additional metadata/cleanup work, is
-also retained as raw logs:
-[PureGo](results/2026-11-04-optimized-purego-linux-amd64.txt),
-[dynamic CGO](results/2026-11-04-optimized-cgo-dynamic-linux-amd64.txt),
-[static CGO](results/2026-11-04-optimized-cgo-linux-amd64.txt), and the
-[earlier noisy PureGo experiment](results/2026-11-04-exploratory-purego-linux-amd64.txt).
-Those runs contain the original 17 workloads.
-
-The unpinned 18-workload investigation before restoring default CGO CFLAGS is
-retained separately:
-[PureGo](results/2026-11-04-final-purego-linux-amd64.txt),
-[dynamic CGO](results/2026-11-04-final-cgo-dynamic-linux-amd64.txt), and
-[static CGO](results/2026-11-04-final-cgo-linux-amd64.txt).
+`results/` retains the current published reports, their raw samples, the
+same-library A/B log and the environment manifest. Superseded runs and
+intermediate experiments remain available in Git history.

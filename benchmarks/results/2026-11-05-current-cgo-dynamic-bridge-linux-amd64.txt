@@ -1,0 +1,703 @@
+=== RUN   TestSameNativeSQLite
+    bench_test.go:411: native library=/home/runner/work/purego-sqlite/purego-sqlite/.native/embed/libsqlite3.so row_read_v1=true exec_scalar_v1=true
+    bench_test.go:443: driver=cgo Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=mattn Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=modernc Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=gcc-12.2.0,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MEMSTATUS=0,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,DISABLE_INTRINSIC,ENABLE_COLUMN_METADATA,ENABLE_DBPAGE_VTAB,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_GEOPOLY,ENABLE_MATH_FUNCTIONS,ENABLE_MEMORY_MANAGEMENT,ENABLE_OFFSET_SQL_FUNC,ENABLE_PREUPDATE_HOOK,ENABLE_RBU,ENABLE_RTREE,ENABLE_SESSION,ENABLE_SNAPSHOT,ENABLE_STAT4,ENABLE_UNLOCK_NOTIFY,LIKE_DOESNT_MATCH_BLOBS,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SOUNDEX,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1
+--- PASS: TestSameNativeSQLite (0.00s)
+=== RUN   TestConnectionSettings
+=== RUN   TestConnectionSettings/cgo
+=== RUN   TestConnectionSettings/mattn
+=== RUN   TestConnectionSettings/modernc
+--- PASS: TestConnectionSettings (0.00s)
+    --- PASS: TestConnectionSettings/cgo (0.00s)
+    --- PASS: TestConnectionSettings/mattn (0.00s)
+    --- PASS: TestConnectionSettings/modernc (0.00s)
+=== RUN   TestMattnParityMedium
+=== RUN   TestMattnParityMedium/cgo
+=== RUN   TestMattnParityMedium/mattn
+--- PASS: TestMattnParityMedium (0.00s)
+    --- PASS: TestMattnParityMedium/cgo (0.00s)
+    --- PASS: TestMattnParityMedium/mattn (0.00s)
+=== RUN   TestMattnParityTypesAndDSN
+--- PASS: TestMattnParityTypesAndDSN (0.00s)
+=== RUN   TestSameNativeSQLite
+    bench_test.go:411: native library=/home/runner/work/purego-sqlite/purego-sqlite/.native/embed/libsqlite3.so row_read_v1=true exec_scalar_v1=true
+    bench_test.go:443: driver=cgo Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=mattn Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=modernc Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=gcc-12.2.0,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MEMSTATUS=0,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,DISABLE_INTRINSIC,ENABLE_COLUMN_METADATA,ENABLE_DBPAGE_VTAB,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_GEOPOLY,ENABLE_MATH_FUNCTIONS,ENABLE_MEMORY_MANAGEMENT,ENABLE_OFFSET_SQL_FUNC,ENABLE_PREUPDATE_HOOK,ENABLE_RBU,ENABLE_RTREE,ENABLE_SESSION,ENABLE_SNAPSHOT,ENABLE_STAT4,ENABLE_UNLOCK_NOTIFY,LIKE_DOESNT_MATCH_BLOBS,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SOUNDEX,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1
+--- PASS: TestSameNativeSQLite (0.00s)
+=== RUN   TestConnectionSettings
+=== RUN   TestConnectionSettings/cgo
+=== RUN   TestConnectionSettings/mattn
+=== RUN   TestConnectionSettings/modernc
+--- PASS: TestConnectionSettings (0.00s)
+    --- PASS: TestConnectionSettings/cgo (0.00s)
+    --- PASS: TestConnectionSettings/mattn (0.00s)
+    --- PASS: TestConnectionSettings/modernc (0.00s)
+=== RUN   TestMattnParityMedium
+=== RUN   TestMattnParityMedium/cgo
+=== RUN   TestMattnParityMedium/mattn
+--- PASS: TestMattnParityMedium (0.00s)
+    --- PASS: TestMattnParityMedium/cgo (0.00s)
+    --- PASS: TestMattnParityMedium/mattn (0.00s)
+=== RUN   TestMattnParityTypesAndDSN
+--- PASS: TestMattnParityTypesAndDSN (0.00s)
+=== RUN   TestSameNativeSQLite
+    bench_test.go:411: native library=/home/runner/work/purego-sqlite/purego-sqlite/.native/embed/libsqlite3.so row_read_v1=true exec_scalar_v1=true
+    bench_test.go:443: driver=cgo Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=mattn Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=modernc Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=gcc-12.2.0,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MEMSTATUS=0,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,DISABLE_INTRINSIC,ENABLE_COLUMN_METADATA,ENABLE_DBPAGE_VTAB,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_GEOPOLY,ENABLE_MATH_FUNCTIONS,ENABLE_MEMORY_MANAGEMENT,ENABLE_OFFSET_SQL_FUNC,ENABLE_PREUPDATE_HOOK,ENABLE_RBU,ENABLE_RTREE,ENABLE_SESSION,ENABLE_SNAPSHOT,ENABLE_STAT4,ENABLE_UNLOCK_NOTIFY,LIKE_DOESNT_MATCH_BLOBS,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SOUNDEX,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1
+--- PASS: TestSameNativeSQLite (0.00s)
+=== RUN   TestConnectionSettings
+=== RUN   TestConnectionSettings/cgo
+=== RUN   TestConnectionSettings/mattn
+=== RUN   TestConnectionSettings/modernc
+--- PASS: TestConnectionSettings (0.00s)
+    --- PASS: TestConnectionSettings/cgo (0.00s)
+    --- PASS: TestConnectionSettings/mattn (0.00s)
+    --- PASS: TestConnectionSettings/modernc (0.00s)
+=== RUN   TestMattnParityMedium
+=== RUN   TestMattnParityMedium/cgo
+=== RUN   TestMattnParityMedium/mattn
+--- PASS: TestMattnParityMedium (0.00s)
+    --- PASS: TestMattnParityMedium/cgo (0.00s)
+    --- PASS: TestMattnParityMedium/mattn (0.00s)
+=== RUN   TestMattnParityTypesAndDSN
+--- PASS: TestMattnParityTypesAndDSN (0.00s)
+=== RUN   TestSameNativeSQLite
+    bench_test.go:411: native library=/home/runner/work/purego-sqlite/purego-sqlite/.native/embed/libsqlite3.so row_read_v1=true exec_scalar_v1=true
+    bench_test.go:443: driver=cgo Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=mattn Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=modernc Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=gcc-12.2.0,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MEMSTATUS=0,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,DISABLE_INTRINSIC,ENABLE_COLUMN_METADATA,ENABLE_DBPAGE_VTAB,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_GEOPOLY,ENABLE_MATH_FUNCTIONS,ENABLE_MEMORY_MANAGEMENT,ENABLE_OFFSET_SQL_FUNC,ENABLE_PREUPDATE_HOOK,ENABLE_RBU,ENABLE_RTREE,ENABLE_SESSION,ENABLE_SNAPSHOT,ENABLE_STAT4,ENABLE_UNLOCK_NOTIFY,LIKE_DOESNT_MATCH_BLOBS,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SOUNDEX,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1
+--- PASS: TestSameNativeSQLite (0.00s)
+=== RUN   TestConnectionSettings
+=== RUN   TestConnectionSettings/cgo
+=== RUN   TestConnectionSettings/mattn
+=== RUN   TestConnectionSettings/modernc
+--- PASS: TestConnectionSettings (0.00s)
+    --- PASS: TestConnectionSettings/cgo (0.00s)
+    --- PASS: TestConnectionSettings/mattn (0.00s)
+    --- PASS: TestConnectionSettings/modernc (0.00s)
+=== RUN   TestMattnParityMedium
+=== RUN   TestMattnParityMedium/cgo
+=== RUN   TestMattnParityMedium/mattn
+--- PASS: TestMattnParityMedium (0.00s)
+    --- PASS: TestMattnParityMedium/cgo (0.00s)
+    --- PASS: TestMattnParityMedium/mattn (0.00s)
+=== RUN   TestMattnParityTypesAndDSN
+--- PASS: TestMattnParityTypesAndDSN (0.00s)
+=== RUN   TestSameNativeSQLite
+    bench_test.go:411: native library=/home/runner/work/purego-sqlite/purego-sqlite/.native/embed/libsqlite3.so row_read_v1=true exec_scalar_v1=true
+    bench_test.go:443: driver=cgo Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=mattn Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=clang-22.1.8,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1,USE_URI
+    bench_test.go:443: driver=modernc Go=go1.27.3 SQLite=3.54.1 source=2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 compile_options=ATOMIC_INTRINSICS=1,COMPILER=gcc-12.2.0,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MEMSTATUS=0,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,DISABLE_INTRINSIC,ENABLE_COLUMN_METADATA,ENABLE_DBPAGE_VTAB,ENABLE_DBSTAT_VTAB,ENABLE_FTS5,ENABLE_GEOPOLY,ENABLE_MATH_FUNCTIONS,ENABLE_MEMORY_MANAGEMENT,ENABLE_OFFSET_SQL_FUNC,ENABLE_PREUPDATE_HOOK,ENABLE_RBU,ENABLE_RTREE,ENABLE_SESSION,ENABLE_SNAPSHOT,ENABLE_STAT4,ENABLE_UNLOCK_NOTIFY,LIKE_DOESNT_MATCH_BLOBS,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=1000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SCHEMA=10000000,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=32766,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SOUNDEX,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1
+--- PASS: TestSameNativeSQLite (0.00s)
+=== RUN   TestConnectionSettings
+=== RUN   TestConnectionSettings/cgo
+=== RUN   TestConnectionSettings/mattn
+=== RUN   TestConnectionSettings/modernc
+--- PASS: TestConnectionSettings (0.00s)
+    --- PASS: TestConnectionSettings/cgo (0.00s)
+    --- PASS: TestConnectionSettings/mattn (0.00s)
+    --- PASS: TestConnectionSettings/modernc (0.00s)
+=== RUN   TestMattnParityMedium
+=== RUN   TestMattnParityMedium/cgo
+=== RUN   TestMattnParityMedium/mattn
+--- PASS: TestMattnParityMedium (0.00s)
+    --- PASS: TestMattnParityMedium/cgo (0.00s)
+    --- PASS: TestMattnParityMedium/mattn (0.00s)
+=== RUN   TestMattnParityTypesAndDSN
+--- PASS: TestMattnParityTypesAndDSN (0.00s)
+goos: linux
+goarch: amd64
+pkg: github.com/yuhaiin/purego-sqlite/benchmarks
+cpu: AMD EPYC 9V74 80-Core Processor
+BenchmarkSQLite
+BenchmarkSQLite/OpenClose
+BenchmarkSQLite/OpenClose/cgo
+BenchmarkSQLite/OpenClose/cgo-4     	    4413	     76423 ns/op	     13085 ops/s	    2911 B/op	      36 allocs/op
+BenchmarkSQLite/OpenClose/cgo-4     	    5059	     70292 ns/op	     14226 ops/s	    2911 B/op	      36 allocs/op
+BenchmarkSQLite/OpenClose/cgo-4     	    4784	     73371 ns/op	     13629 ops/s	    2911 B/op	      36 allocs/op
+BenchmarkSQLite/OpenClose/cgo-4     	    6207	     73913 ns/op	     13529 ops/s	    2910 B/op	      36 allocs/op
+BenchmarkSQLite/OpenClose/cgo-4     	    4597	     65661 ns/op	     15230 ops/s	    2909 B/op	      36 allocs/op
+BenchmarkSQLite/OpenClose/mattn
+BenchmarkSQLite/OpenClose/mattn-4   	    4219	     81445 ns/op	     12278 ops/s	    2980 B/op	      64 allocs/op
+BenchmarkSQLite/OpenClose/mattn-4   	    4754	     82819 ns/op	     12075 ops/s	    2972 B/op	      64 allocs/op
+BenchmarkSQLite/OpenClose/mattn-4   	    4207	     83530 ns/op	     11972 ops/s	    2974 B/op	      64 allocs/op
+BenchmarkSQLite/OpenClose/mattn-4   	    5077	     79111 ns/op	     12640 ops/s	    2965 B/op	      64 allocs/op
+BenchmarkSQLite/OpenClose/mattn-4   	    4720	     78503 ns/op	     12738 ops/s	    2969 B/op	      64 allocs/op
+BenchmarkSQLite/OpenClose/modernc
+BenchmarkSQLite/OpenClose/modernc-4 	    2834	    126304 ns/op	      7917 ops/s	    4612 B/op	      84 allocs/op
+BenchmarkSQLite/OpenClose/modernc-4 	    2992	    122334 ns/op	      8174 ops/s	    4610 B/op	      84 allocs/op
+BenchmarkSQLite/OpenClose/modernc-4 	    2719	    129402 ns/op	      7728 ops/s	    4606 B/op	      83 allocs/op
+BenchmarkSQLite/OpenClose/modernc-4 	    2760	    126709 ns/op	      7892 ops/s	    4610 B/op	      84 allocs/op
+BenchmarkSQLite/OpenClose/modernc-4 	    3318	    127592 ns/op	      7837 ops/s	    4612 B/op	      84 allocs/op
+BenchmarkSQLite/SelectConstant
+BenchmarkSQLite/SelectConstant/cgo
+BenchmarkSQLite/SelectConstant/cgo-4         	  155286	      2166 ns/op	    461706 ops/s	     488 B/op	      15 allocs/op
+BenchmarkSQLite/SelectConstant/cgo-4         	  159478	      2165 ns/op	    461855 ops/s	     488 B/op	      15 allocs/op
+BenchmarkSQLite/SelectConstant/cgo-4         	  161130	      2165 ns/op	    461958 ops/s	     488 B/op	      15 allocs/op
+BenchmarkSQLite/SelectConstant/cgo-4         	  160894	      2163 ns/op	    462228 ops/s	     488 B/op	      15 allocs/op
+BenchmarkSQLite/SelectConstant/cgo-4         	  159861	      2158 ns/op	    463415 ops/s	     488 B/op	      15 allocs/op
+BenchmarkSQLite/SelectConstant/mattn
+BenchmarkSQLite/SelectConstant/mattn-4       	  147580	      2360 ns/op	    423742 ops/s	     536 B/op	      14 allocs/op
+BenchmarkSQLite/SelectConstant/mattn-4       	  151099	      2347 ns/op	    426043 ops/s	     536 B/op	      14 allocs/op
+BenchmarkSQLite/SelectConstant/mattn-4       	  146553	      2341 ns/op	    427155 ops/s	     536 B/op	      14 allocs/op
+BenchmarkSQLite/SelectConstant/mattn-4       	  151389	      2340 ns/op	    427340 ops/s	     536 B/op	      14 allocs/op
+BenchmarkSQLite/SelectConstant/mattn-4       	  148687	      2533 ns/op	    394761 ops/s	     536 B/op	      14 allocs/op
+BenchmarkSQLite/SelectConstant/modernc
+BenchmarkSQLite/SelectConstant/modernc-4     	  135048	      2492 ns/op	    401271 ops/s	     480 B/op	      13 allocs/op
+BenchmarkSQLite/SelectConstant/modernc-4     	  142807	      2448 ns/op	    408434 ops/s	     480 B/op	      13 allocs/op
+BenchmarkSQLite/SelectConstant/modernc-4     	  143240	      2444 ns/op	    409185 ops/s	     480 B/op	      13 allocs/op
+BenchmarkSQLite/SelectConstant/modernc-4     	  144261	      2435 ns/op	    410737 ops/s	     480 B/op	      13 allocs/op
+BenchmarkSQLite/SelectConstant/modernc-4     	  143145	      2449 ns/op	    408250 ops/s	     480 B/op	      13 allocs/op
+BenchmarkSQLite/SingleInsert
+BenchmarkSQLite/SingleInsert/cgo
+BenchmarkSQLite/SingleInsert/cgo-4           	   31513	     11138 ns/op	     89780 ops/s	     248 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/cgo-4           	   33019	     10932 ns/op	     91473 ops/s	     248 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/cgo-4           	   33072	     10775 ns/op	     92804 ops/s	     248 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/cgo-4           	   32378	     10991 ns/op	     90984 ops/s	     248 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/cgo-4           	   32882	     10908 ns/op	     91678 ops/s	     248 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/mattn
+BenchmarkSQLite/SingleInsert/mattn-4         	   31922	     11150 ns/op	     89682 ops/s	     224 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/mattn-4         	   32066	     11080 ns/op	     90254 ops/s	     224 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/mattn-4         	   32383	     11045 ns/op	     90539 ops/s	     224 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/mattn-4         	   32355	     11095 ns/op	     90133 ops/s	     224 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/mattn-4         	   32043	     11080 ns/op	     90253 ops/s	     224 B/op	       7 allocs/op
+BenchmarkSQLite/SingleInsert/modernc
+BenchmarkSQLite/SingleInsert/modernc-4       	   25458	     14193 ns/op	     70456 ops/s	     124 B/op	       5 allocs/op
+BenchmarkSQLite/SingleInsert/modernc-4       	   25404	     14066 ns/op	     71096 ops/s	     124 B/op	       5 allocs/op
+BenchmarkSQLite/SingleInsert/modernc-4       	   25450	     14141 ns/op	     70716 ops/s	     124 B/op	       5 allocs/op
+BenchmarkSQLite/SingleInsert/modernc-4       	   25551	     13967 ns/op	     71596 ops/s	     124 B/op	       5 allocs/op
+BenchmarkSQLite/SingleInsert/modernc-4       	   25548	     14099 ns/op	     70929 ops/s	     124 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert
+BenchmarkSQLite/PreparedInsert/cgo
+BenchmarkSQLite/PreparedInsert/cgo-4         	   37954	      9343 ns/op	    107027 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/PreparedInsert/cgo-4         	   38589	      9273 ns/op	    107841 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/PreparedInsert/cgo-4         	   37621	      9492 ns/op	    105350 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/PreparedInsert/cgo-4         	   37786	      9445 ns/op	    105875 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/PreparedInsert/cgo-4         	   37992	      9373 ns/op	    106688 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/PreparedInsert/mattn
+BenchmarkSQLite/PreparedInsert/mattn-4       	   38606	      9275 ns/op	    107815 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/mattn-4       	   37678	      9336 ns/op	    107109 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/mattn-4       	   38643	      9284 ns/op	    107712 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/mattn-4       	   38643	      9286 ns/op	    107687 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/mattn-4       	   38731	      9223 ns/op	    108419 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/modernc
+BenchmarkSQLite/PreparedInsert/modernc-4     	   29713	     12089 ns/op	     82722 ops/s	     116 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/modernc-4     	   29618	     12085 ns/op	     82747 ops/s	     116 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/modernc-4     	   29694	     12169 ns/op	     82173 ops/s	     116 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/modernc-4     	   29502	     12169 ns/op	     82174 ops/s	     116 B/op	       5 allocs/op
+BenchmarkSQLite/PreparedInsert/modernc-4     	   29824	     12041 ns/op	     83052 ops/s	     116 B/op	       5 allocs/op
+BenchmarkSQLite/BatchInsert1000
+BenchmarkSQLite/BatchInsert1000/cgo
+BenchmarkSQLite/BatchInsert1000/cgo-4        	     553	    632844 ns/op	      1580 ops/s	      1000 rows/op	  125064 B/op	    5513 allocs/op
+BenchmarkSQLite/BatchInsert1000/cgo-4        	     566	    626764 ns/op	      1595 ops/s	      1000 rows/op	  125096 B/op	    5513 allocs/op
+BenchmarkSQLite/BatchInsert1000/cgo-4        	     568	    627491 ns/op	      1594 ops/s	      1000 rows/op	  125077 B/op	    5513 allocs/op
+BenchmarkSQLite/BatchInsert1000/cgo-4        	     555	    630679 ns/op	      1586 ops/s	      1000 rows/op	  125085 B/op	    5513 allocs/op
+BenchmarkSQLite/BatchInsert1000/cgo-4        	     555	    638841 ns/op	      1565 ops/s	      1000 rows/op	  125069 B/op	    5513 allocs/op
+BenchmarkSQLite/BatchInsert1000/mattn
+BenchmarkSQLite/BatchInsert1000/mattn-4      	     506	    697511 ns/op	      1434 ops/s	      1000 rows/op	  140802 B/op	    6508 allocs/op
+BenchmarkSQLite/BatchInsert1000/mattn-4      	     495	    725725 ns/op	      1378 ops/s	      1000 rows/op	  140771 B/op	    6508 allocs/op
+BenchmarkSQLite/BatchInsert1000/mattn-4      	     510	    702255 ns/op	      1424 ops/s	      1000 rows/op	  140783 B/op	    6508 allocs/op
+BenchmarkSQLite/BatchInsert1000/mattn-4      	     499	    701035 ns/op	      1426 ops/s	      1000 rows/op	  140773 B/op	    6508 allocs/op
+BenchmarkSQLite/BatchInsert1000/mattn-4      	     513	    701361 ns/op	      1426 ops/s	      1000 rows/op	  140774 B/op	    6508 allocs/op
+BenchmarkSQLite/BatchInsert1000/modernc
+BenchmarkSQLite/BatchInsert1000/modernc-4    	     368	    963566 ns/op	      1038 ops/s	      1000 rows/op	  131628 B/op	    6502 allocs/op
+BenchmarkSQLite/BatchInsert1000/modernc-4    	     367	    964940 ns/op	      1036 ops/s	      1000 rows/op	  131643 B/op	    6502 allocs/op
+BenchmarkSQLite/BatchInsert1000/modernc-4    	     372	    960892 ns/op	      1041 ops/s	      1000 rows/op	  131647 B/op	    6502 allocs/op
+BenchmarkSQLite/BatchInsert1000/modernc-4    	     370	    963417 ns/op	      1038 ops/s	      1000 rows/op	  131642 B/op	    6502 allocs/op
+BenchmarkSQLite/BatchInsert1000/modernc-4    	     375	    950579 ns/op	      1052 ops/s	      1000 rows/op	  131617 B/op	    6502 allocs/op
+BenchmarkSQLite/BatchInsert1000Values
+BenchmarkSQLite/BatchInsert1000Values/cgo
+BenchmarkSQLite/BatchInsert1000Values/cgo-4  	    1644	    214873 ns/op	      4654 ops/s	      1000 rows/op	   42181 B/op	      29 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/cgo-4  	    1582	    210553 ns/op	      4749 ops/s	      1000 rows/op	   42185 B/op	      29 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/cgo-4  	    1611	    209415 ns/op	      4775 ops/s	      1000 rows/op	   42181 B/op	      29 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/cgo-4  	    1574	    216754 ns/op	      4614 ops/s	      1000 rows/op	   42180 B/op	      29 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/cgo-4  	    1582	    214319 ns/op	      4666 ops/s	      1000 rows/op	   42183 B/op	      29 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/mattn
+BenchmarkSQLite/BatchInsert1000Values/mattn-4         	    1386	    240142 ns/op	      4164 ops/s	      1000 rows/op	   41895 B/op	      25 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/mattn-4         	    1466	    236452 ns/op	      4229 ops/s	      1000 rows/op	   41898 B/op	      25 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/mattn-4         	    1333	    241953 ns/op	      4133 ops/s	      1000 rows/op	   41901 B/op	      25 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/mattn-4         	    1448	    236047 ns/op	      4236 ops/s	      1000 rows/op	   41899 B/op	      25 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/mattn-4         	    1472	    236597 ns/op	      4227 ops/s	      1000 rows/op	   41903 B/op	      25 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/modernc
+BenchmarkSQLite/BatchInsert1000Values/modernc-4       	     844	    404227 ns/op	      2474 ops/s	      1000 rows/op	   41790 B/op	      19 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/modernc-4       	     848	    406509 ns/op	      2460 ops/s	      1000 rows/op	   41785 B/op	      19 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/modernc-4       	     829	    419889 ns/op	      2382 ops/s	      1000 rows/op	   41792 B/op	      19 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/modernc-4       	     901	    400705 ns/op	      2496 ops/s	      1000 rows/op	   41808 B/op	      19 allocs/op
+BenchmarkSQLite/BatchInsert1000Values/modernc-4       	     879	    405110 ns/op	      2468 ops/s	      1000 rows/op	   41786 B/op	      19 allocs/op
+BenchmarkSQLite/TransactionInsert100000
+BenchmarkSQLite/TransactionInsert100000/cgo
+BenchmarkSQLite/TransactionInsert100000/cgo-4         	       5	  61277262 ns/op	        16.32 ops/s	    100000 rows/op	12797062 B/op	  599513 allocs/op
+BenchmarkSQLite/TransactionInsert100000/cgo-4         	       5	  61288382 ns/op	        16.32 ops/s	    100000 rows/op	12797075 B/op	  599513 allocs/op
+BenchmarkSQLite/TransactionInsert100000/cgo-4         	       5	  61783217 ns/op	        16.19 ops/s	    100000 rows/op	12797068 B/op	  599513 allocs/op
+BenchmarkSQLite/TransactionInsert100000/cgo-4         	       5	  61086039 ns/op	        16.37 ops/s	    100000 rows/op	12797072 B/op	  599513 allocs/op
+BenchmarkSQLite/TransactionInsert100000/cgo-4         	       5	  61468508 ns/op	        16.27 ops/s	    100000 rows/op	12797049 B/op	  599513 allocs/op
+BenchmarkSQLite/TransactionInsert100000/mattn
+BenchmarkSQLite/TransactionInsert100000/mattn-4       	       5	  68292809 ns/op	        14.64 ops/s	    100000 rows/op	14396760 B/op	  699508 allocs/op
+BenchmarkSQLite/TransactionInsert100000/mattn-4       	       5	  68411275 ns/op	        14.62 ops/s	    100000 rows/op	14396763 B/op	  699508 allocs/op
+BenchmarkSQLite/TransactionInsert100000/mattn-4       	       5	  68122218 ns/op	        14.68 ops/s	    100000 rows/op	14396779 B/op	  699508 allocs/op
+BenchmarkSQLite/TransactionInsert100000/mattn-4       	       5	  68135355 ns/op	        14.68 ops/s	    100000 rows/op	14396769 B/op	  699508 allocs/op
+BenchmarkSQLite/TransactionInsert100000/mattn-4       	       5	  68217387 ns/op	        14.66 ops/s	    100000 rows/op	14396776 B/op	  699508 allocs/op
+BenchmarkSQLite/TransactionInsert100000/modernc
+BenchmarkSQLite/TransactionInsert100000/modernc-4     	       4	  96715047 ns/op	        10.34 ops/s	    100000 rows/op	13596240 B/op	  699502 allocs/op
+BenchmarkSQLite/TransactionInsert100000/modernc-4     	       4	  95635368 ns/op	        10.46 ops/s	    100000 rows/op	13595636 B/op	  699502 allocs/op
+BenchmarkSQLite/TransactionInsert100000/modernc-4     	       4	  96402623 ns/op	        10.37 ops/s	    100000 rows/op	13595636 B/op	  699502 allocs/op
+BenchmarkSQLite/TransactionInsert100000/modernc-4     	       4	  96882013 ns/op	        10.32 ops/s	    100000 rows/op	13595652 B/op	  699502 allocs/op
+BenchmarkSQLite/TransactionInsert100000/modernc-4     	       4	  96713115 ns/op	        10.34 ops/s	    100000 rows/op	13595644 B/op	  699502 allocs/op
+BenchmarkSQLite/SingleRowSelect
+BenchmarkSQLite/SingleRowSelect/cgo
+BenchmarkSQLite/SingleRowSelect/cgo-4                 	   57250	      6205 ns/op	    161154 ops/s	     656 B/op	      23 allocs/op
+BenchmarkSQLite/SingleRowSelect/cgo-4                 	   57997	      6179 ns/op	    161837 ops/s	     656 B/op	      23 allocs/op
+BenchmarkSQLite/SingleRowSelect/cgo-4                 	   57796	      6180 ns/op	    161818 ops/s	     656 B/op	      23 allocs/op
+BenchmarkSQLite/SingleRowSelect/cgo-4                 	   58153	      6188 ns/op	    161597 ops/s	     656 B/op	      23 allocs/op
+BenchmarkSQLite/SingleRowSelect/cgo-4                 	   56731	      6172 ns/op	    162033 ops/s	     656 B/op	      23 allocs/op
+BenchmarkSQLite/SingleRowSelect/mattn
+BenchmarkSQLite/SingleRowSelect/mattn-4               	   54867	      6489 ns/op	    154102 ops/s	     736 B/op	      26 allocs/op
+BenchmarkSQLite/SingleRowSelect/mattn-4               	   55088	      6476 ns/op	    154420 ops/s	     736 B/op	      26 allocs/op
+BenchmarkSQLite/SingleRowSelect/mattn-4               	   55528	      6479 ns/op	    154353 ops/s	     736 B/op	      26 allocs/op
+BenchmarkSQLite/SingleRowSelect/mattn-4               	   55188	      6500 ns/op	    153856 ops/s	     736 B/op	      26 allocs/op
+BenchmarkSQLite/SingleRowSelect/mattn-4               	   55183	      6454 ns/op	    154955 ops/s	     736 B/op	      26 allocs/op
+BenchmarkSQLite/SingleRowSelect/modernc
+BenchmarkSQLite/SingleRowSelect/modernc-4             	   42955	      8397 ns/op	    119096 ops/s	     672 B/op	      24 allocs/op
+BenchmarkSQLite/SingleRowSelect/modernc-4             	   43165	      8309 ns/op	    120355 ops/s	     672 B/op	      24 allocs/op
+BenchmarkSQLite/SingleRowSelect/modernc-4             	   42619	      8371 ns/op	    119462 ops/s	     672 B/op	      24 allocs/op
+BenchmarkSQLite/SingleRowSelect/modernc-4             	   42120	      8412 ns/op	    118884 ops/s	     672 B/op	      24 allocs/op
+BenchmarkSQLite/SingleRowSelect/modernc-4             	   42696	      8380 ns/op	    119336 ops/s	     672 B/op	      24 allocs/op
+BenchmarkSQLite/FullScan1000
+BenchmarkSQLite/FullScan1000/cgo
+BenchmarkSQLite/FullScan1000/cgo-4                    	     650	    538198 ns/op	      1858 ops/s	      1000 rows/op	   82424 B/op	    7303 allocs/op
+BenchmarkSQLite/FullScan1000/cgo-4                    	     673	    511584 ns/op	      1955 ops/s	      1000 rows/op	   82424 B/op	    7303 allocs/op
+BenchmarkSQLite/FullScan1000/cgo-4                    	     656	    527905 ns/op	      1894 ops/s	      1000 rows/op	   82424 B/op	    7303 allocs/op
+BenchmarkSQLite/FullScan1000/cgo-4                    	     690	    512133 ns/op	      1953 ops/s	      1000 rows/op	   82424 B/op	    7303 allocs/op
+BenchmarkSQLite/FullScan1000/cgo-4                    	     679	    510926 ns/op	      1957 ops/s	      1000 rows/op	   82424 B/op	    7303 allocs/op
+BenchmarkSQLite/FullScan1000/mattn
+BenchmarkSQLite/FullScan1000/mattn-4                  	     733	    488935 ns/op	      2045 ops/s	      1000 rows/op	   82520 B/op	    7308 allocs/op
+BenchmarkSQLite/FullScan1000/mattn-4                  	     708	    493658 ns/op	      2026 ops/s	      1000 rows/op	   82520 B/op	    7308 allocs/op
+BenchmarkSQLite/FullScan1000/mattn-4                  	     723	    493914 ns/op	      2025 ops/s	      1000 rows/op	   82520 B/op	    7308 allocs/op
+BenchmarkSQLite/FullScan1000/mattn-4                  	     720	    490196 ns/op	      2040 ops/s	      1000 rows/op	   82520 B/op	    7308 allocs/op
+BenchmarkSQLite/FullScan1000/mattn-4                  	     727	    493096 ns/op	      2028 ops/s	      1000 rows/op	   82520 B/op	    7308 allocs/op
+BenchmarkSQLite/FullScan1000/modernc
+BenchmarkSQLite/FullScan1000/modernc-4                	     753	    463130 ns/op	      2159 ops/s	      1000 rows/op	   82440 B/op	    7305 allocs/op
+BenchmarkSQLite/FullScan1000/modernc-4                	     727	    465437 ns/op	      2149 ops/s	      1000 rows/op	   82440 B/op	    7305 allocs/op
+BenchmarkSQLite/FullScan1000/modernc-4                	     784	    459265 ns/op	      2177 ops/s	      1000 rows/op	   82440 B/op	    7305 allocs/op
+BenchmarkSQLite/FullScan1000/modernc-4                	     756	    462710 ns/op	      2161 ops/s	      1000 rows/op	   82440 B/op	    7305 allocs/op
+BenchmarkSQLite/FullScan1000/modernc-4                	     770	    462551 ns/op	      2162 ops/s	      1000 rows/op	   82440 B/op	    7305 allocs/op
+BenchmarkSQLite/IndexedLookup
+BenchmarkSQLite/IndexedLookup/cgo
+BenchmarkSQLite/IndexedLookup/cgo-4                   	   55410	      6346 ns/op	    157585 ops/s	     552 B/op	      18 allocs/op
+BenchmarkSQLite/IndexedLookup/cgo-4                   	   56336	      6332 ns/op	    157927 ops/s	     552 B/op	      18 allocs/op
+BenchmarkSQLite/IndexedLookup/cgo-4                   	   57585	      6313 ns/op	    158392 ops/s	     552 B/op	      18 allocs/op
+BenchmarkSQLite/IndexedLookup/cgo-4                   	   56248	      6337 ns/op	    157805 ops/s	     552 B/op	      18 allocs/op
+BenchmarkSQLite/IndexedLookup/cgo-4                   	   56616	      6340 ns/op	    157718 ops/s	     552 B/op	      18 allocs/op
+BenchmarkSQLite/IndexedLookup/mattn
+BenchmarkSQLite/IndexedLookup/mattn-4                 	   54733	      6529 ns/op	    153154 ops/s	     616 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/mattn-4                 	   54822	      6553 ns/op	    152613 ops/s	     616 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/mattn-4                 	   55780	      6476 ns/op	    154414 ops/s	     616 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/mattn-4                 	   55395	      6515 ns/op	    153500 ops/s	     616 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/mattn-4                 	   55656	      6506 ns/op	    153705 ops/s	     616 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/modernc
+BenchmarkSQLite/IndexedLookup/modernc-4               	   42087	      8553 ns/op	    116922 ops/s	     568 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/modernc-4               	   41875	      8576 ns/op	    116601 ops/s	     568 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/modernc-4               	   41628	      8598 ns/op	    116309 ops/s	     568 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/modernc-4               	   41792	      8594 ns/op	    116359 ops/s	     568 B/op	      19 allocs/op
+BenchmarkSQLite/IndexedLookup/modernc-4               	   41948	      8552 ns/op	    116934 ops/s	     568 B/op	      19 allocs/op
+BenchmarkSQLite/LargeTextRead
+BenchmarkSQLite/LargeTextRead/cgo
+BenchmarkSQLite/LargeTextRead/cgo-4                   	    2091	    165622 ns/op	6331.13 MB/s	      6038 ops/s	 1049098 B/op	      17 allocs/op
+BenchmarkSQLite/LargeTextRead/cgo-4                   	    1693	    195419 ns/op	5365.77 MB/s	      5117 ops/s	 1049105 B/op	      17 allocs/op
+BenchmarkSQLite/LargeTextRead/cgo-4                   	    1522	    219853 ns/op	4769.43 MB/s	      4548 ops/s	 1049101 B/op	      17 allocs/op
+BenchmarkSQLite/LargeTextRead/cgo-4                   	    1720	    219526 ns/op	4776.54 MB/s	      4555 ops/s	 1049102 B/op	      17 allocs/op
+BenchmarkSQLite/LargeTextRead/cgo-4                   	    1538	    229420 ns/op	4570.55 MB/s	      4359 ops/s	 1049102 B/op	      17 allocs/op
+BenchmarkSQLite/LargeTextRead/mattn
+BenchmarkSQLite/LargeTextRead/mattn-4                 	    1662	    209101 ns/op	5014.69 MB/s	      4782 ops/s	 1049142 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/mattn-4                 	    1658	    234194 ns/op	4477.38 MB/s	      4270 ops/s	 1049142 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/mattn-4                 	    1150	    262033 ns/op	4001.69 MB/s	      3816 ops/s	 1049142 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/mattn-4                 	    1633	    184253 ns/op	5690.95 MB/s	      5427 ops/s	 1049142 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/mattn-4                 	    2368	    190236 ns/op	5511.98 MB/s	      5257 ops/s	 1049142 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/modernc
+BenchmarkSQLite/LargeTextRead/modernc-4               	    1605	    192536 ns/op	5446.13 MB/s	      5194 ops/s	 1049091 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/modernc-4               	    1942	    195181 ns/op	5372.32 MB/s	      5123 ops/s	 1049091 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/modernc-4               	    1771	    191647 ns/op	5471.40 MB/s	      5218 ops/s	 1049091 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/modernc-4               	    1648	    192367 ns/op	5450.92 MB/s	      5198 ops/s	 1049092 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextRead/modernc-4               	    1615	    186383 ns/op	5625.92 MB/s	      5365 ops/s	 1049090 B/op	      16 allocs/op
+BenchmarkSQLite/LargeTextWrite
+BenchmarkSQLite/LargeTextWrite/cgo
+BenchmarkSQLite/LargeTextWrite/cgo-4                  	    3872	     89156 ns/op	11761.16 MB/s	     11216 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeTextWrite/cgo-4                  	    4009	     87894 ns/op	11929.97 MB/s	     11377 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeTextWrite/cgo-4                  	    3921	     89537 ns/op	11711.08 MB/s	     11169 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeTextWrite/cgo-4                  	    4002	     87318 ns/op	12008.63 MB/s	     11452 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeTextWrite/cgo-4                  	    3895	     88808 ns/op	11807.17 MB/s	     11260 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeTextWrite/mattn
+BenchmarkSQLite/LargeTextWrite/mattn-4                	    4096	     87301 ns/op	12011.00 MB/s	     11455 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeTextWrite/mattn-4                	    3896	     88688 ns/op	11823.21 MB/s	     11276 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeTextWrite/mattn-4                	    4120	     87230 ns/op	12020.84 MB/s	     11464 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeTextWrite/mattn-4                	    4111	     87245 ns/op	12018.68 MB/s	     11462 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeTextWrite/mattn-4                	    4071	    344695 ns/op	3042.04 MB/s	      2901 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeTextWrite/modernc
+BenchmarkSQLite/LargeTextWrite/modernc-4              	    3325	    103647 ns/op	10116.76 MB/s	      9648 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeTextWrite/modernc-4              	    3416	    103056 ns/op	10174.84 MB/s	      9703 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeTextWrite/modernc-4              	    3405	    104192 ns/op	10063.88 MB/s	      9598 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeTextWrite/modernc-4              	    3482	    102867 ns/op	10193.47 MB/s	      9721 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeTextWrite/modernc-4              	    3470	    103457 ns/op	10135.41 MB/s	      9666 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeBlobRead
+BenchmarkSQLite/LargeBlobRead/cgo
+BenchmarkSQLite/LargeBlobRead/cgo-4                   	     676	    461265 ns/op	2273.26 MB/s	      2168 ops/s	 2097697 B/op	      18 allocs/op
+BenchmarkSQLite/LargeBlobRead/cgo-4                   	     794	    521013 ns/op	2012.57 MB/s	      1919 ops/s	 2097701 B/op	      18 allocs/op
+BenchmarkSQLite/LargeBlobRead/cgo-4                   	     668	    473831 ns/op	2212.97 MB/s	      2110 ops/s	 2097701 B/op	      18 allocs/op
+BenchmarkSQLite/LargeBlobRead/cgo-4                   	     630	    495486 ns/op	2116.26 MB/s	      2018 ops/s	 2097700 B/op	      18 allocs/op
+BenchmarkSQLite/LargeBlobRead/cgo-4                   	     801	    437927 ns/op	2394.41 MB/s	      2283 ops/s	 2097700 B/op	      18 allocs/op
+BenchmarkSQLite/LargeBlobRead/mattn
+BenchmarkSQLite/LargeBlobRead/mattn-4                 	     901	    466151 ns/op	2249.43 MB/s	      2145 ops/s	 2097748 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/mattn-4                 	     933	    464401 ns/op	2257.91 MB/s	      2153 ops/s	 2097742 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/mattn-4                 	     738	    431136 ns/op	2432.12 MB/s	      2319 ops/s	 2097745 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/mattn-4                 	    1022	    421023 ns/op	2490.54 MB/s	      2375 ops/s	 2097741 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/mattn-4                 	    1290	    440513 ns/op	2380.35 MB/s	      2270 ops/s	 2097741 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/modernc
+BenchmarkSQLite/LargeBlobRead/modernc-4               	     822	    534012 ns/op	1963.58 MB/s	      1873 ops/s	 2097694 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/modernc-4               	     680	    512773 ns/op	2044.91 MB/s	      1950 ops/s	 2097695 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/modernc-4               	     688	    517794 ns/op	2025.08 MB/s	      1931 ops/s	 2097691 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/modernc-4               	     804	    454424 ns/op	2307.48 MB/s	      2201 ops/s	 2097689 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobRead/modernc-4               	     752	    486956 ns/op	2153.33 MB/s	      2054 ops/s	 2097692 B/op	      17 allocs/op
+BenchmarkSQLite/LargeBlobWrite
+BenchmarkSQLite/LargeBlobWrite/cgo
+BenchmarkSQLite/LargeBlobWrite/cgo-4                  	    4062	    162293 ns/op	6460.99 MB/s	      6162 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeBlobWrite/cgo-4                  	    4003	    221340 ns/op	4737.40 MB/s	      4518 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeBlobWrite/cgo-4                  	    4054	     89120 ns/op	11765.90 MB/s	     11221 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeBlobWrite/cgo-4                  	    3957	     88176 ns/op	11891.84 MB/s	     11341 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeBlobWrite/cgo-4                  	    4070	     89621 ns/op	11700.13 MB/s	     11158 ops/s	     112 B/op	       4 allocs/op
+BenchmarkSQLite/LargeBlobWrite/mattn
+BenchmarkSQLite/LargeBlobWrite/mattn-4                	    4089	     89036 ns/op	11776.94 MB/s	     11231 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeBlobWrite/mattn-4                	    4017	     88720 ns/op	11818.99 MB/s	     11271 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeBlobWrite/mattn-4                	    3788	     89730 ns/op	11685.92 MB/s	     11145 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeBlobWrite/mattn-4                	    4027	     89813 ns/op	11675.09 MB/s	     11134 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeBlobWrite/mattn-4                	    3955	     89814 ns/op	11674.99 MB/s	     11134 ops/s	     128 B/op	       5 allocs/op
+BenchmarkSQLite/LargeBlobWrite/modernc
+BenchmarkSQLite/LargeBlobWrite/modernc-4              	    3302	    103696 ns/op	10111.99 MB/s	      9644 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeBlobWrite/modernc-4              	    3438	    103109 ns/op	10169.55 MB/s	      9698 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeBlobWrite/modernc-4              	    3422	    103707 ns/op	10110.95 MB/s	      9643 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeBlobWrite/modernc-4              	    3441	    103794 ns/op	10102.51 MB/s	      9635 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/LargeBlobWrite/modernc-4              	    3428	    103769 ns/op	10104.94 MB/s	      9637 ops/s	     132 B/op	       6 allocs/op
+BenchmarkSQLite/WALReaders
+BenchmarkSQLite/WALReaders/cgo
+BenchmarkSQLite/WALReaders/cgo-4                      	  108166	      2847 ns/op	    351286 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/cgo-4                      	  109081	      3062 ns/op	    326617 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/cgo-4                      	   99604	      3111 ns/op	    321436 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/cgo-4                      	   97870	      3210 ns/op	    311530 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/cgo-4                      	  101889	      3130 ns/op	    319484 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/mattn
+BenchmarkSQLite/WALReaders/mattn-4                    	  100305	      3342 ns/op	    299214 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/WALReaders/mattn-4                    	  102889	      3400 ns/op	    294108 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/WALReaders/mattn-4                    	  120645	      3087 ns/op	    323977 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/WALReaders/mattn-4                    	  117800	      3091 ns/op	    323527 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/WALReaders/mattn-4                    	  103525	      3480 ns/op	    287397 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/WALReaders/modernc
+BenchmarkSQLite/WALReaders/modernc-4                  	   89553	      3646 ns/op	    274258 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/modernc-4                  	  101808	      3808 ns/op	    262601 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/modernc-4                  	   92058	      3724 ns/op	    268494 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/modernc-4                  	   98216	      3593 ns/op	    278292 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALReaders/modernc-4                  	  100576	      3587 ns/op	    278799 ops/s	     512 B/op	      17 allocs/op
+BenchmarkSQLite/WALWriterContention
+BenchmarkSQLite/WALWriterContention/cgo
+BenchmarkSQLite/WALWriterContention/cgo-4             	   26019	     12046 ns/op	     83012 ops/s	     200 B/op	       6 allocs/op
+BenchmarkSQLite/WALWriterContention/cgo-4             	   28215	     12039 ns/op	     83060 ops/s	     200 B/op	       6 allocs/op
+BenchmarkSQLite/WALWriterContention/cgo-4             	   27669	     11882 ns/op	     84161 ops/s	     200 B/op	       6 allocs/op
+BenchmarkSQLite/WALWriterContention/cgo-4             	   27022	     12307 ns/op	     81256 ops/s	     200 B/op	       6 allocs/op
+BenchmarkSQLite/WALWriterContention/cgo-4             	   27930	     14718 ns/op	     67945 ops/s	     200 B/op	       6 allocs/op
+BenchmarkSQLite/WALWriterContention/mattn
+BenchmarkSQLite/WALWriterContention/mattn-4           	   27208	     13803 ns/op	     72446 ops/s	      72 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/mattn-4           	   26534	     11560 ns/op	     86508 ops/s	      72 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/mattn-4           	   29784	     11752 ns/op	     85091 ops/s	      72 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/mattn-4           	   28226	     11643 ns/op	     85891 ops/s	      72 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/mattn-4           	   28401	     12040 ns/op	     83057 ops/s	      72 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/modernc
+BenchmarkSQLite/WALWriterContention/modernc-4         	   18686	     16709 ns/op	     59848 ops/s	      76 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/modernc-4         	   20076	     16416 ns/op	     60917 ops/s	      76 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/modernc-4         	   20202	     16307 ns/op	     61325 ops/s	      76 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/modernc-4         	   19045	     16336 ns/op	     61214 ops/s	      76 B/op	       4 allocs/op
+BenchmarkSQLite/WALWriterContention/modernc-4         	   17631	     18370 ns/op	     54435 ops/s	      76 B/op	       4 allocs/op
+BenchmarkSQLite/FTS5Search
+BenchmarkSQLite/FTS5Search/cgo
+BenchmarkSQLite/FTS5Search/cgo-4                      	    8356	     42350 ns/op	     23613 ops/s	     560 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/cgo-4                      	    6741	     45640 ns/op	     21910 ops/s	     560 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/cgo-4                      	    7894	     42721 ns/op	     23408 ops/s	     560 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/cgo-4                      	    7878	     42553 ns/op	     23500 ops/s	     560 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/cgo-4                      	    8394	     43160 ns/op	     23170 ops/s	     560 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/mattn
+BenchmarkSQLite/FTS5Search/mattn-4                    	    8428	     43008 ns/op	     23252 ops/s	     600 B/op	      17 allocs/op
+BenchmarkSQLite/FTS5Search/mattn-4                    	    8346	     43555 ns/op	     22960 ops/s	     600 B/op	      17 allocs/op
+BenchmarkSQLite/FTS5Search/mattn-4                    	    8233	     43016 ns/op	     23247 ops/s	     600 B/op	      17 allocs/op
+BenchmarkSQLite/FTS5Search/mattn-4                    	    8164	     43749 ns/op	     22858 ops/s	     600 B/op	      17 allocs/op
+BenchmarkSQLite/FTS5Search/mattn-4                    	    8364	     46951 ns/op	     21299 ops/s	     600 B/op	      17 allocs/op
+BenchmarkSQLite/FTS5Search/modernc
+BenchmarkSQLite/FTS5Search/modernc-4                  	    4741	     75307 ns/op	     13279 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/modernc-4                  	    4784	     73984 ns/op	     13516 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/modernc-4                  	    4732	     76824 ns/op	     13017 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/modernc-4                  	    4756	     74117 ns/op	     13492 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/FTS5Search/modernc-4                  	    4833	     74609 ns/op	     13403 ops/s	     568 B/op	      18 allocs/op
+BenchmarkSQLite/JSONQuery
+BenchmarkSQLite/JSONQuery/cgo
+BenchmarkSQLite/JSONQuery/cgo-4                       	  107593	      3383 ns/op	    295619 ops/s	     568 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/cgo-4                       	  107272	      3413 ns/op	    292962 ops/s	     568 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/cgo-4                       	  106096	      3414 ns/op	    292883 ops/s	     568 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/cgo-4                       	  105762	      3425 ns/op	    291986 ops/s	     568 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/cgo-4                       	  105256	      3430 ns/op	    291554 ops/s	     568 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/mattn
+BenchmarkSQLite/JSONQuery/mattn-4                     	   99843	      3563 ns/op	    280626 ops/s	     608 B/op	      15 allocs/op
+BenchmarkSQLite/JSONQuery/mattn-4                     	  100252	      3567 ns/op	    280325 ops/s	     608 B/op	      15 allocs/op
+BenchmarkSQLite/JSONQuery/mattn-4                     	  100412	      3549 ns/op	    281792 ops/s	     608 B/op	      15 allocs/op
+BenchmarkSQLite/JSONQuery/mattn-4                     	  103159	      3539 ns/op	    282569 ops/s	     608 B/op	      15 allocs/op
+BenchmarkSQLite/JSONQuery/mattn-4                     	   98329	      3558 ns/op	    281028 ops/s	     608 B/op	      15 allocs/op
+BenchmarkSQLite/JSONQuery/modernc
+BenchmarkSQLite/JSONQuery/modernc-4                   	   75655	      4653 ns/op	    214931 ops/s	     576 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/modernc-4                   	   77517	      4653 ns/op	    214932 ops/s	     576 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/modernc-4                   	   77794	      4655 ns/op	    214837 ops/s	     576 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/modernc-4                   	   78201	      4619 ns/op	    216484 ops/s	     576 B/op	      16 allocs/op
+BenchmarkSQLite/JSONQuery/modernc-4                   	   78259	      4640 ns/op	    215526 ops/s	     576 B/op	      16 allocs/op
+BenchmarkMattnMedium
+BenchmarkMattnMedium/RepeatedQuery
+BenchmarkMattnMedium/RepeatedQuery/Cache0
+BenchmarkMattnMedium/RepeatedQuery/Cache0/cgo
+BenchmarkMattnMedium/RepeatedQuery/Cache0/cgo-4       	   93132	      3787 ns/op	    264030 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/cgo-4       	   94579	      3791 ns/op	    263796 ops/s	     721 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/cgo-4       	   92901	      3830 ns/op	    261091 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/cgo-4       	   95482	      3797 ns/op	    263389 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/cgo-4       	   93700	      3810 ns/op	    262479 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/mattn
+BenchmarkMattnMedium/RepeatedQuery/Cache0/mattn-4     	   83575	      4273 ns/op	    234032 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/mattn-4     	   84236	      4260 ns/op	    234739 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/mattn-4     	   84334	      4261 ns/op	    234713 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/mattn-4     	   87126	      4237 ns/op	    236004 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/mattn-4     	   85387	      4220 ns/op	    236977 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/modernc
+BenchmarkMattnMedium/RepeatedQuery/Cache0/modernc-4   	   69693	      5092 ns/op	    196385 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/modernc-4   	   70700	      5059 ns/op	    197673 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/modernc-4   	   71174	      5071 ns/op	    197217 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/modernc-4   	   71862	      5069 ns/op	    197271 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache0/modernc-4   	   71782	      5041 ns/op	    198374 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16
+BenchmarkMattnMedium/RepeatedQuery/Cache16/cgo
+BenchmarkMattnMedium/RepeatedQuery/Cache16/cgo-4      	  150357	      2220 ns/op	    450415 ops/s	     744 B/op	      18 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/cgo-4      	  165524	      2155 ns/op	    463991 ops/s	     744 B/op	      18 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/cgo-4      	  170648	      2138 ns/op	    467792 ops/s	     744 B/op	      18 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/cgo-4      	  164530	      2161 ns/op	    462849 ops/s	     744 B/op	      18 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/cgo-4      	  163664	      2160 ns/op	    463034 ops/s	     744 B/op	      18 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/mattn
+BenchmarkMattnMedium/RepeatedQuery/Cache16/mattn-4    	  184563	      1972 ns/op	    506989 ops/s	     616 B/op	      14 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/mattn-4    	  180508	      1980 ns/op	    504962 ops/s	     616 B/op	      14 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/mattn-4    	  185342	      1945 ns/op	    514081 ops/s	     616 B/op	      14 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/mattn-4    	  189952	      1923 ns/op	    519995 ops/s	     616 B/op	      14 allocs/op
+BenchmarkMattnMedium/RepeatedQuery/Cache16/mattn-4    	  186218	      1981 ns/op	    504728 ops/s	     618 B/op	      14 allocs/op
+BenchmarkMattnMedium/RepeatedExec
+BenchmarkMattnMedium/RepeatedExec/Cache0
+BenchmarkMattnMedium/RepeatedExec/Cache0/cgo
+BenchmarkMattnMedium/RepeatedExec/Cache0/cgo-4        	  168802	      2032 ns/op	    492231 ops/s	     279 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/cgo-4        	  178581	      2026 ns/op	    493586 ops/s	     279 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/cgo-4        	  173350	      2047 ns/op	    488441 ops/s	     279 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/cgo-4        	  180207	      2022 ns/op	    494621 ops/s	     279 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/cgo-4        	  179593	      2024 ns/op	    494115 ops/s	     279 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/mattn
+BenchmarkMattnMedium/RepeatedExec/Cache0/mattn-4      	  166831	      2197 ns/op	    455262 ops/s	     255 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/mattn-4      	  162727	      2192 ns/op	    456215 ops/s	     255 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/mattn-4      	  160414	      2210 ns/op	    452391 ops/s	     255 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/mattn-4      	  159634	      2208 ns/op	    452976 ops/s	     255 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/mattn-4      	  162169	      2200 ns/op	    454561 ops/s	     255 B/op	       9 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/modernc
+BenchmarkMattnMedium/RepeatedExec/Cache0/modernc-4    	  123976	      2951 ns/op	    338849 ops/s	     159 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/modernc-4    	  120183	      2966 ns/op	    337199 ops/s	     159 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/modernc-4    	  120512	      2965 ns/op	    337251 ops/s	     159 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/modernc-4    	  120697	      2985 ns/op	    335023 ops/s	     159 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache0/modernc-4    	  121610	      2959 ns/op	    337899 ops/s	     159 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16
+BenchmarkMattnMedium/RepeatedExec/Cache16/cgo
+BenchmarkMattnMedium/RepeatedExec/Cache16/cgo-4       	  342412	       988.3 ns/op	   1011881 ops/s	     303 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/cgo-4       	  367867	       973.0 ns/op	   1027736 ops/s	     303 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/cgo-4       	  343309	       989.8 ns/op	   1010269 ops/s	     303 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/cgo-4       	  361431	       992.8 ns/op	   1007289 ops/s	     303 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/cgo-4       	  363324	       984.1 ns/op	   1016163 ops/s	     303 B/op	       7 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/mattn
+BenchmarkMattnMedium/RepeatedExec/Cache16/mattn-4     	  465520	       815.4 ns/op	   1226415 ops/s	     143 B/op	       6 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/mattn-4     	  465620	       820.1 ns/op	   1219372 ops/s	     143 B/op	       6 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/mattn-4     	  458544	       821.7 ns/op	   1216970 ops/s	     143 B/op	       6 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/mattn-4     	  436908	       821.7 ns/op	   1217046 ops/s	     143 B/op	       6 allocs/op
+BenchmarkMattnMedium/RepeatedExec/Cache16/mattn-4     	  445210	       818.4 ns/op	   1221917 ops/s	     143 B/op	       6 allocs/op
+BenchmarkMattnMedium/CacheMisses
+BenchmarkMattnMedium/CacheMisses/Cache0
+BenchmarkMattnMedium/CacheMisses/Cache0/cgo
+BenchmarkMattnMedium/CacheMisses/Cache0/cgo-4         	   92893	      3828 ns/op	    261255 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/cgo-4         	   94298	      3842 ns/op	    260261 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/cgo-4         	   95394	      3828 ns/op	    261230 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/cgo-4         	   92870	      3837 ns/op	    260599 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/cgo-4         	   92131	      3810 ns/op	    262443 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/mattn
+BenchmarkMattnMedium/CacheMisses/Cache0/mattn-4       	   83347	      4273 ns/op	    234002 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/mattn-4       	   86319	      4220 ns/op	    236990 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/mattn-4       	   81753	      4260 ns/op	    234721 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/mattn-4       	   85186	      4251 ns/op	    235224 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/mattn-4       	   84769	      4250 ns/op	    235302 ops/s	     777 B/op	      21 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/modernc
+BenchmarkMattnMedium/CacheMisses/Cache0/modernc-4     	   69726	      5130 ns/op	    194946 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/modernc-4     	   70752	      5079 ns/op	    196901 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/modernc-4     	   71836	      5064 ns/op	    197486 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/modernc-4     	   69566	      5097 ns/op	    196200 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache0/modernc-4     	   69103	      5108 ns/op	    195773 ops/s	     720 B/op	      20 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16
+BenchmarkMattnMedium/CacheMisses/Cache16/cgo
+BenchmarkMattnMedium/CacheMisses/Cache16/cgo-4        	   75532	      4677 ns/op	    213828 ops/s	     960 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/cgo-4        	   78612	      4614 ns/op	    216744 ops/s	     960 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/cgo-4        	   77270	      4662 ns/op	    214493 ops/s	     960 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/cgo-4        	   76242	      4714 ns/op	    212124 ops/s	     960 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/cgo-4        	   78062	      4624 ns/op	    216268 ops/s	     960 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/mattn
+BenchmarkMattnMedium/CacheMisses/Cache16/mattn-4      	   74842	      4819 ns/op	    207511 ops/s	     833 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/mattn-4      	   75068	      4829 ns/op	    207101 ops/s	     833 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/mattn-4      	   73941	      4833 ns/op	    206914 ops/s	     833 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/mattn-4      	   75361	      4819 ns/op	    207501 ops/s	     833 B/op	      23 allocs/op
+BenchmarkMattnMedium/CacheMisses/Cache16/mattn-4      	   74836	      4790 ns/op	    208765 ops/s	     833 B/op	      23 allocs/op
+BenchmarkMattnMedium/Serialize1MiB
+BenchmarkMattnMedium/Serialize1MiB/cgo
+BenchmarkMattnMedium/Serialize1MiB/cgo-4              	    2265	    159041 ns/op	6644.64 MB/s	      6288 ops/s	 1056778 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/cgo-4              	    2107	    170633 ns/op	6193.22 MB/s	      5861 ops/s	 1056778 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/cgo-4              	    2323	    162905 ns/op	6487.01 MB/s	      6139 ops/s	 1056780 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/cgo-4              	    2074	    160621 ns/op	6579.28 MB/s	      6226 ops/s	 1056779 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/cgo-4              	    2145	    162697 ns/op	6495.32 MB/s	      6146 ops/s	 1056779 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/mattn
+BenchmarkMattnMedium/Serialize1MiB/mattn-4            	    1480	    235142 ns/op	4494.17 MB/s	      4253 ops/s	 1056779 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/mattn-4            	    1563	    229316 ns/op	4608.36 MB/s	      4361 ops/s	 1056780 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/mattn-4            	    1630	    218547 ns/op	4835.42 MB/s	      4576 ops/s	 1056780 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/mattn-4            	    1569	    207574 ns/op	5091.04 MB/s	      4818 ops/s	 1056780 B/op	       2 allocs/op
+BenchmarkMattnMedium/Serialize1MiB/mattn-4            	    1994	    204497 ns/op	5167.64 MB/s	      4890 ops/s	 1056781 B/op	       2 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB
+BenchmarkMattnMedium/Deserialize1MiB/cgo
+BenchmarkMattnMedium/Deserialize1MiB/cgo-4            	    9723	     31679 ns/op	33358.59 MB/s	     31567 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/cgo-4            	    9748	     31472 ns/op	33578.07 MB/s	     31774 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/cgo-4            	    9702	     52623 ns/op	20081.92 MB/s	     19003 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/cgo-4            	    9672	     31346 ns/op	33712.56 MB/s	     31902 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/cgo-4            	    9763	     31392 ns/op	33663.08 MB/s	     31855 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/mattn
+BenchmarkMattnMedium/Deserialize1MiB/mattn-4          	    9870	     31147 ns/op	33928.29 MB/s	     32106 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/mattn-4          	   11630	     30956 ns/op	34138.16 MB/s	     32304 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/mattn-4          	    9651	     31718 ns/op	33317.44 MB/s	     31528 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/mattn-4          	    9762	     30894 ns/op	34206.62 MB/s	     32369 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Deserialize1MiB/mattn-4          	    9835	     31471 ns/op	33579.17 MB/s	     31775 ops/s	       0 B/op	       0 allocs/op
+BenchmarkMattnMedium/Backup1MiB
+BenchmarkMattnMedium/Backup1MiB/cgo
+BenchmarkMattnMedium/Backup1MiB/cgo-4                 	     238	   1489922 ns/op	 703.78 MB/s	       671.2 ops/s	     736 B/op	       6 allocs/op
+BenchmarkMattnMedium/Backup1MiB/cgo-4                 	     242	   1487530 ns/op	 704.91 MB/s	       672.3 ops/s	     736 B/op	       6 allocs/op
+BenchmarkMattnMedium/Backup1MiB/cgo-4                 	     244	   1468985 ns/op	 713.81 MB/s	       680.7 ops/s	     736 B/op	       6 allocs/op
+BenchmarkMattnMedium/Backup1MiB/cgo-4                 	     244	   1483740 ns/op	 706.71 MB/s	       674.0 ops/s	     736 B/op	       6 allocs/op
+BenchmarkMattnMedium/Backup1MiB/cgo-4                 	     240	   1493224 ns/op	 702.22 MB/s	       669.7 ops/s	     736 B/op	       6 allocs/op
+BenchmarkMattnMedium/Backup1MiB/mattn
+BenchmarkMattnMedium/Backup1MiB/mattn-4               	     237	   1516297 ns/op	 691.54 MB/s	       659.5 ops/s	       8 B/op	       1 allocs/op
+BenchmarkMattnMedium/Backup1MiB/mattn-4               	     240	   1488514 ns/op	 704.45 MB/s	       671.8 ops/s	       8 B/op	       1 allocs/op
+BenchmarkMattnMedium/Backup1MiB/mattn-4               	     235	   1525661 ns/op	 687.29 MB/s	       655.5 ops/s	       8 B/op	       1 allocs/op
+BenchmarkMattnMedium/Backup1MiB/mattn-4               	     237	   1503913 ns/op	 697.23 MB/s	       664.9 ops/s	       8 B/op	       1 allocs/op
+BenchmarkMattnMedium/Backup1MiB/mattn-4               	     242	   1482303 ns/op	 707.40 MB/s	       674.6 ops/s	       8 B/op	       1 allocs/op
+BenchmarkMattnMedium/CommitHook
+BenchmarkMattnMedium/CommitHook/cgo
+BenchmarkMattnMedium/CommitHook/cgo-4                 	   22914	     15663 ns/op	     63846 ops/s	     200 B/op	       6 allocs/op
+BenchmarkMattnMedium/CommitHook/cgo-4                 	   22983	     15678 ns/op	     63786 ops/s	     200 B/op	       6 allocs/op
+BenchmarkMattnMedium/CommitHook/cgo-4                 	   22545	     15866 ns/op	     63029 ops/s	     200 B/op	       6 allocs/op
+BenchmarkMattnMedium/CommitHook/cgo-4                 	   22900	     15686 ns/op	     63753 ops/s	     200 B/op	       6 allocs/op
+BenchmarkMattnMedium/CommitHook/cgo-4                 	   22948	     15720 ns/op	     63612 ops/s	     200 B/op	       6 allocs/op
+BenchmarkMattnMedium/CommitHook/mattn
+BenchmarkMattnMedium/CommitHook/mattn-4               	   23655	     15348 ns/op	     65154 ops/s	      72 B/op	       4 allocs/op
+BenchmarkMattnMedium/CommitHook/mattn-4               	   23584	     15240 ns/op	     65616 ops/s	      72 B/op	       4 allocs/op
+BenchmarkMattnMedium/CommitHook/mattn-4               	   23680	     15230 ns/op	     65660 ops/s	      72 B/op	       4 allocs/op
+BenchmarkMattnMedium/CommitHook/mattn-4               	   23523	     15331 ns/op	     65229 ops/s	      72 B/op	       4 allocs/op
+BenchmarkMattnMedium/CommitHook/mattn-4               	   23558	     15386 ns/op	     64996 ops/s	      72 B/op	       4 allocs/op
+BenchmarkMattnMedium/Authorizer
+BenchmarkMattnMedium/Authorizer/cgo
+BenchmarkMattnMedium/Authorizer/cgo-4                 	   26863	     13340 ns/op	     74961 ops/s	     488 B/op	      20 allocs/op
+BenchmarkMattnMedium/Authorizer/cgo-4                 	   26534	     13439 ns/op	     74408 ops/s	     488 B/op	      20 allocs/op
+BenchmarkMattnMedium/Authorizer/cgo-4                 	   26602	     13363 ns/op	     74834 ops/s	     488 B/op	      20 allocs/op
+BenchmarkMattnMedium/Authorizer/cgo-4                 	   26734	     13425 ns/op	     74486 ops/s	     488 B/op	      20 allocs/op
+BenchmarkMattnMedium/Authorizer/cgo-4                 	   26940	     13411 ns/op	     74565 ops/s	     488 B/op	      20 allocs/op
+BenchmarkMattnMedium/Authorizer/mattn
+BenchmarkMattnMedium/Authorizer/mattn-4               	   26620	     13483 ns/op	     74167 ops/s	     536 B/op	      21 allocs/op
+BenchmarkMattnMedium/Authorizer/mattn-4               	   26986	     13464 ns/op	     74270 ops/s	     536 B/op	      21 allocs/op
+BenchmarkMattnMedium/Authorizer/mattn-4               	   26632	     13481 ns/op	     74179 ops/s	     536 B/op	      21 allocs/op
+BenchmarkMattnMedium/Authorizer/mattn-4               	   26497	     13606 ns/op	     73497 ops/s	     536 B/op	      21 allocs/op
+BenchmarkMattnMedium/Authorizer/mattn-4               	   26700	     13456 ns/op	     74316 ops/s	     536 B/op	      21 allocs/op
+BenchmarkMattnMedium/Trace
+BenchmarkMattnMedium/Trace/cgo
+BenchmarkMattnMedium/Trace/cgo-4                      	   27421	     13147 ns/op	     76062 ops/s	     512 B/op	      15 allocs/op
+BenchmarkMattnMedium/Trace/cgo-4                      	   27302	     13142 ns/op	     76093 ops/s	     512 B/op	      15 allocs/op
+BenchmarkMattnMedium/Trace/cgo-4                      	   27561	     13083 ns/op	     76434 ops/s	     512 B/op	      15 allocs/op
+BenchmarkMattnMedium/Trace/cgo-4                      	   27466	     13246 ns/op	     75494 ops/s	     512 B/op	      15 allocs/op
+BenchmarkMattnMedium/Trace/cgo-4                      	   27171	     13194 ns/op	     75790 ops/s	     512 B/op	      15 allocs/op
+BenchmarkMattnMedium/Trace/mattn
+BenchmarkMattnMedium/Trace/mattn-4                    	   26634	     13489 ns/op	     74133 ops/s	     568 B/op	      16 allocs/op
+BenchmarkMattnMedium/Trace/mattn-4                    	   27016	     13431 ns/op	     74453 ops/s	     568 B/op	      16 allocs/op
+BenchmarkMattnMedium/Trace/mattn-4                    	   26964	     13377 ns/op	     74757 ops/s	     568 B/op	      16 allocs/op
+BenchmarkMattnMedium/Trace/mattn-4                    	   26798	     13436 ns/op	     74427 ops/s	     568 B/op	      16 allocs/op
+BenchmarkMattnMedium/Trace/mattn-4                    	   26931	     13422 ns/op	     74505 ops/s	     568 B/op	      16 allocs/op
+BenchmarkMattnParity
+BenchmarkMattnParity/Scalar
+BenchmarkMattnParity/Scalar/cgo
+BenchmarkMattnParity/Scalar/cgo-4                     	  155851	      2234 ns/op	    447532 ops/s	     520 B/op	      19 allocs/op
+BenchmarkMattnParity/Scalar/cgo-4                     	  163600	      2246 ns/op	    445229 ops/s	     520 B/op	      19 allocs/op
+BenchmarkMattnParity/Scalar/cgo-4                     	  158227	      2238 ns/op	    446847 ops/s	     520 B/op	      19 allocs/op
+BenchmarkMattnParity/Scalar/cgo-4                     	  157441	      2247 ns/op	    445005 ops/s	     520 B/op	      19 allocs/op
+BenchmarkMattnParity/Scalar/cgo-4                     	  157839	      2257 ns/op	    443080 ops/s	     520 B/op	      19 allocs/op
+BenchmarkMattnParity/Scalar/mattn
+BenchmarkMattnParity/Scalar/mattn-4                   	  180638	      1942 ns/op	    515011 ops/s	     528 B/op	      14 allocs/op
+BenchmarkMattnParity/Scalar/mattn-4                   	  184776	      1949 ns/op	    513152 ops/s	     528 B/op	      14 allocs/op
+BenchmarkMattnParity/Scalar/mattn-4                   	  186348	      1927 ns/op	    518810 ops/s	     528 B/op	      14 allocs/op
+BenchmarkMattnParity/Scalar/mattn-4                   	  187465	      1944 ns/op	    514294 ops/s	     528 B/op	      14 allocs/op
+BenchmarkMattnParity/Scalar/mattn-4                   	  186111	      1944 ns/op	    514485 ops/s	     528 B/op	      14 allocs/op
+BenchmarkMattnParity/Aggregate1000
+BenchmarkMattnParity/Aggregate1000/cgo
+BenchmarkMattnParity/Aggregate1000/cgo-4              	     756	    474309 ns/op	      2108 ops/s	   46714 B/op	    3769 allocs/op
+BenchmarkMattnParity/Aggregate1000/cgo-4              	     763	    477062 ns/op	      2096 ops/s	   46712 B/op	    3769 allocs/op
+BenchmarkMattnParity/Aggregate1000/cgo-4              	     753	    477551 ns/op	      2094 ops/s	   46712 B/op	    3769 allocs/op
+BenchmarkMattnParity/Aggregate1000/cgo-4              	     746	    479198 ns/op	      2087 ops/s	   46712 B/op	    3769 allocs/op
+BenchmarkMattnParity/Aggregate1000/cgo-4              	     764	    474294 ns/op	      2108 ops/s	   46712 B/op	    3769 allocs/op
+BenchmarkMattnParity/Aggregate1000/mattn
+BenchmarkMattnParity/Aggregate1000/mattn-4            	     505	    700904 ns/op	      1427 ops/s	  126545 B/op	    4762 allocs/op
+BenchmarkMattnParity/Aggregate1000/mattn-4            	     507	    708479 ns/op	      1411 ops/s	  126545 B/op	    4762 allocs/op
+BenchmarkMattnParity/Aggregate1000/mattn-4            	     507	    703618 ns/op	      1421 ops/s	  126545 B/op	    4762 allocs/op
+BenchmarkMattnParity/Aggregate1000/mattn-4            	     513	    708393 ns/op	      1412 ops/s	  126545 B/op	    4762 allocs/op
+BenchmarkMattnParity/Aggregate1000/mattn-4            	     511	    704373 ns/op	      1420 ops/s	  126545 B/op	    4762 allocs/op
+BenchmarkMattnParity/CollationSort1000
+BenchmarkMattnParity/CollationSort1000/cgo
+BenchmarkMattnParity/CollationSort1000/cgo-4          	     415	    864919 ns/op	      1156 ops/s	  210024 B/op	   13117 allocs/op
+BenchmarkMattnParity/CollationSort1000/cgo-4          	     400	    879737 ns/op	      1137 ops/s	  210024 B/op	   13117 allocs/op
+BenchmarkMattnParity/CollationSort1000/cgo-4          	     399	    892256 ns/op	      1121 ops/s	  210024 B/op	   13117 allocs/op
+BenchmarkMattnParity/CollationSort1000/cgo-4          	     408	    889418 ns/op	      1124 ops/s	  210024 B/op	   13117 allocs/op
+BenchmarkMattnParity/CollationSort1000/cgo-4          	     408	    862450 ns/op	      1159 ops/s	  210024 B/op	   13117 allocs/op
+BenchmarkMattnParity/CollationSort1000/mattn
+BenchmarkMattnParity/CollationSort1000/mattn-4        	     442	    813994 ns/op	      1229 ops/s	  210056 B/op	   13112 allocs/op
+BenchmarkMattnParity/CollationSort1000/mattn-4        	     434	    822939 ns/op	      1215 ops/s	  210056 B/op	   13112 allocs/op
+BenchmarkMattnParity/CollationSort1000/mattn-4        	     433	    828619 ns/op	      1207 ops/s	  210056 B/op	   13112 allocs/op
+BenchmarkMattnParity/CollationSort1000/mattn-4        	     436	    820666 ns/op	      1219 ops/s	  210056 B/op	   13112 allocs/op
+BenchmarkMattnParity/CollationSort1000/mattn-4        	     436	    828623 ns/op	      1207 ops/s	  210056 B/op	   13112 allocs/op
+BenchmarkMattnParity/TimeBind
+BenchmarkMattnParity/TimeBind/cgo
+BenchmarkMattnParity/TimeBind/cgo-4                   	  186676	      1898 ns/op	    526883 ops/s	     601 B/op	      19 allocs/op
+BenchmarkMattnParity/TimeBind/cgo-4                   	  173742	      1929 ns/op	    518315 ops/s	     601 B/op	      19 allocs/op
+BenchmarkMattnParity/TimeBind/cgo-4                   	  187786	      1923 ns/op	    520011 ops/s	     601 B/op	      19 allocs/op
+BenchmarkMattnParity/TimeBind/cgo-4                   	  186164	      1907 ns/op	    524392 ops/s	     601 B/op	      19 allocs/op
+BenchmarkMattnParity/TimeBind/cgo-4                   	  184546	      1900 ns/op	    526420 ops/s	     601 B/op	      19 allocs/op
+BenchmarkMattnParity/TimeBind/mattn
+BenchmarkMattnParity/TimeBind/mattn-4                 	  210987	      1803 ns/op	    554626 ops/s	     632 B/op	      15 allocs/op
+BenchmarkMattnParity/TimeBind/mattn-4                 	  211506	      1723 ns/op	    580516 ops/s	     632 B/op	      15 allocs/op
+BenchmarkMattnParity/TimeBind/mattn-4                 	  206412	      1717 ns/op	    582395 ops/s	     632 B/op	      15 allocs/op
+BenchmarkMattnParity/TimeBind/mattn-4                 	  214162	      1708 ns/op	    585467 ops/s	     632 B/op	      15 allocs/op
+BenchmarkMattnParity/TimeBind/mattn-4                 	  203239	      1713 ns/op	    583621 ops/s	     632 B/op	      15 allocs/op
+BenchmarkMattnParity/TypedRows1000
+BenchmarkMattnParity/TypedRows1000/cgo
+BenchmarkMattnParity/TypedRows1000/cgo-4              	     358	    981854 ns/op	      1018 ops/s	  312441 B/op	   10015 allocs/op
+BenchmarkMattnParity/TypedRows1000/cgo-4              	     362	    987537 ns/op	      1013 ops/s	  312440 B/op	   10015 allocs/op
+BenchmarkMattnParity/TypedRows1000/cgo-4              	     361	    985867 ns/op	      1014 ops/s	  312441 B/op	   10015 allocs/op
+BenchmarkMattnParity/TypedRows1000/cgo-4              	     369	    998281 ns/op	      1002 ops/s	  312440 B/op	   10015 allocs/op
+BenchmarkMattnParity/TypedRows1000/cgo-4              	     369	    978257 ns/op	      1022 ops/s	  312440 B/op	   10015 allocs/op
+BenchmarkMattnParity/TypedRows1000/mattn
+BenchmarkMattnParity/TypedRows1000/mattn-4            	     421	    844723 ns/op	      1184 ops/s	  296409 B/op	    9008 allocs/op
+BenchmarkMattnParity/TypedRows1000/mattn-4            	     429	    846682 ns/op	      1181 ops/s	  296408 B/op	    9008 allocs/op
+BenchmarkMattnParity/TypedRows1000/mattn-4            	     422	    843356 ns/op	      1186 ops/s	  296409 B/op	    9008 allocs/op
+BenchmarkMattnParity/TypedRows1000/mattn-4            	     428	    847933 ns/op	      1179 ops/s	  296409 B/op	    9008 allocs/op
+BenchmarkMattnParity/TypedRows1000/mattn-4            	     420	    846552 ns/op	      1181 ops/s	  296410 B/op	    9008 allocs/op
+PASS
+ok  	github.com/yuhaiin/purego-sqlite/benchmarks	169.713s

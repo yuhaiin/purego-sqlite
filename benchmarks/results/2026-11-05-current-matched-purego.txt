@@ -1,0 +1,62 @@
+goos: linux
+goarch: amd64
+pkg: github.com/yuhaiin/purego-sqlite
+cpu: AMD EPYC 9V74 80-Core Processor
+BenchmarkScalarExec/BatchInsert1000/standard-4         	     564	   1033063 ns/op	      1000 rows/op	  125379 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/standard-4         	     592	    996973 ns/op	      1000 rows/op	  125276 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/standard-4         	     601	   1027405 ns/op	      1000 rows/op	  125248 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/standard-4         	     591	   1000004 ns/op	      1000 rows/op	  125236 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/standard-4         	     597	    997739 ns/op	      1000 rows/op	  125262 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/standard-4         	     589	    994857 ns/op	      1000 rows/op	  125240 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/standard-4         	     597	   1004018 ns/op	      1000 rows/op	  125237 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/bridge-4           	     828	    704254 ns/op	      1000 rows/op	  125249 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/bridge-4           	     852	    696891 ns/op	      1000 rows/op	  125233 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/bridge-4           	     847	    700266 ns/op	      1000 rows/op	  125237 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/bridge-4           	     793	    705540 ns/op	      1000 rows/op	  125243 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/bridge-4           	     826	    707253 ns/op	      1000 rows/op	  125257 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/bridge-4           	     858	    696487 ns/op	      1000 rows/op	  125249 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000/bridge-4           	     856	    702699 ns/op	      1000 rows/op	  125246 B/op	    5516 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/standard-4   	    1852	    307125 ns/op	      1000 rows/op	   42342 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/standard-4   	    1899	    301754 ns/op	      1000 rows/op	   42327 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/standard-4   	    1864	    297135 ns/op	      1000 rows/op	   42332 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/standard-4   	    1880	    299818 ns/op	      1000 rows/op	   42334 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/standard-4   	    1810	    302830 ns/op	      1000 rows/op	   42337 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/standard-4   	    1887	    298553 ns/op	      1000 rows/op	   42336 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/standard-4   	    1905	    298835 ns/op	      1000 rows/op	   42324 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/bridge-4     	    2664	    216763 ns/op	      1000 rows/op	   42337 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/bridge-4     	    2546	    210263 ns/op	      1000 rows/op	   42344 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/bridge-4     	    2689	    217563 ns/op	      1000 rows/op	   42339 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/bridge-4     	    2523	    222358 ns/op	      1000 rows/op	   42328 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/bridge-4     	    2643	    213536 ns/op	      1000 rows/op	   42337 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/bridge-4     	    2540	    214802 ns/op	      1000 rows/op	   42336 B/op	      32 allocs/op
+BenchmarkScalarExec/BatchInsert1000Values/bridge-4     	    2685	    218430 ns/op	      1000 rows/op	   42341 B/op	      32 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/standard-4 	       6	  96561029 ns/op	    100000 rows/op	12799761 B/op	  599525 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/standard-4 	       6	  96239142 ns/op	    100000 rows/op	12799966 B/op	  599527 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/standard-4 	       6	  97394892 ns/op	    100000 rows/op	12799825 B/op	  599525 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/standard-4 	       6	  97282504 ns/op	    100000 rows/op	12799716 B/op	  599525 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/standard-4 	       6	  97599999 ns/op	    100000 rows/op	12800028 B/op	  599526 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/standard-4 	       6	  97656424 ns/op	    100000 rows/op	12799548 B/op	  599525 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/standard-4 	       6	  96801920 ns/op	    100000 rows/op	12799753 B/op	  599525 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/bridge-4   	       8	  68425962 ns/op	    100000 rows/op	12799908 B/op	  599527 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/bridge-4   	       8	  68221484 ns/op	    100000 rows/op	12799888 B/op	  599526 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/bridge-4   	       8	  68130194 ns/op	    100000 rows/op	12799930 B/op	  599527 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/bridge-4   	       8	  68121248 ns/op	    100000 rows/op	12799936 B/op	  599526 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/bridge-4   	       8	  67673793 ns/op	    100000 rows/op	12800158 B/op	  599528 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/bridge-4   	       8	  67958164 ns/op	    100000 rows/op	12799860 B/op	  599526 allocs/op
+BenchmarkScalarExec/TransactionInsert100000/bridge-4   	       8	  67974514 ns/op	    100000 rows/op	12799798 B/op	  599527 allocs/op
+BenchmarkRowReader/standard-4                          	     573	   1019022 ns/op	      1000 rows/op	   82490 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4                          	     582	   1016344 ns/op	      1000 rows/op	   82486 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4                          	     595	   1005848 ns/op	      1000 rows/op	   82486 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4                          	     591	   1017436 ns/op	      1000 rows/op	   82486 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4                          	     589	   1000280 ns/op	      1000 rows/op	   82488 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4                          	     583	   1024500 ns/op	      1000 rows/op	   82488 B/op	    7304 allocs/op
+BenchmarkRowReader/standard-4                          	     571	   1016805 ns/op	      1000 rows/op	   82488 B/op	    7304 allocs/op
+BenchmarkRowReader/bridge-4                            	    1011	    577262 ns/op	      1000 rows/op	   82489 B/op	    7304 allocs/op
+BenchmarkRowReader/bridge-4                            	    1011	    583330 ns/op	      1000 rows/op	   82488 B/op	    7304 allocs/op
+BenchmarkRowReader/bridge-4                            	    1020	    583110 ns/op	      1000 rows/op	   82488 B/op	    7304 allocs/op
+BenchmarkRowReader/bridge-4                            	    1015	    594445 ns/op	      1000 rows/op	   82489 B/op	    7304 allocs/op
+BenchmarkRowReader/bridge-4                            	    1027	    579414 ns/op	      1000 rows/op	   82488 B/op	    7304 allocs/op
+BenchmarkRowReader/bridge-4                            	    1011	    582408 ns/op	      1000 rows/op	   82489 B/op	    7304 allocs/op
+BenchmarkRowReader/bridge-4                            	    1012	    579149 ns/op	      1000 rows/op	   82488 B/op	    7304 allocs/op
+PASS
+ok  	github.com/yuhaiin/purego-sqlite	34.106s
