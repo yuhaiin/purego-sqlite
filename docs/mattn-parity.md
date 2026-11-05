@@ -1,151 +1,150 @@
-# 与 mattn/go-sqlite3 的功能差距调研
+# Feature parity assessment: mattn/go-sqlite3
 
-调研日期：2026-11-05。本文是接口与迁移语义的调研，不表示已经决定实现全部 API。
+Research date: 2026-11-05. This document assesses API coverage and migration semantics; it does not commit to implementing every API listed here.
 
-本文记录实现前的固定 main 快照。随后完成的高优先级功能、当前 API 与
-验证方法见 [兼容性指南](mattn-compatibility.md)；中优先级内容仍是后续计划。
+This is a baseline assessment of the main snapshot before implementation. See the [compatibility guide](mattn-compatibility.md) for the implemented high-priority features, current APIs, and validation. Medium-priority features remain follow-up work.
 
-## 对比范围
+## Comparison scope
 
-- mattn/go-sqlite3：固定源码 [45f73f261e58ede2a09b91a392ef13a5ec0bb0fa][mattn-tree]，不是只参考 README 或旧版印象。
-- 最新发布版为 [v1.14.52][mattn-release]（2026-09-05，源码 `b0be46fa28d17ee0b65c79774ac0dad84b6db068`），也是本库 benchmarks/go.mod 使用的版本。另行核对了该版的语句缓存实现，下面的缓存建议并非只针对未发布 master。
-- purego-sqlite：远程 main [550d58b7e757e5dbc83fe128fe27a7cdc1421948][ours-tree]。
-- 调研工作区 HEAD 为 `eedc669e5bf73d34b5ba1ca0d37d112dea0e2760`，分支 `codex/connection-limits`。它与上述 main 的差异集中在 Go codegen、自动更新和相应 CI/文档；本文核对的连接、绑定、rows、backup、limits 核心文件一致。
+- mattn/go-sqlite3: source pinned to [45f73f261e58ede2a09b91a392ef13a5ec0bb0fa][mattn-tree], rather than relying only on its README or older releases.
+- The latest release at the time of this assessment was [v1.14.52][mattn-release] (2026-09-05, source `b0be46fa28d17ee0b65c79774ac0dad84b6db068`), also used by this repository's benchmarks/go.mod. Its statement cache was checked separately, so the cache recommendations are not limited to unreleased master code.
+- purego-sqlite: remote main [550d58b7e757e5dbc83fe128fe27a7cdc1421948][ours-tree].
+- The research checkout was `eedc669e5bf73d34b5ba1ca0d37d112dea0e2760` on `codex/connection-limits`. Its differences from that main snapshot concern Go code generation, automatic updates, and related CI/documentation. The connection, binding, rows, backup, and limits implementations assessed here are identical.
 
-结论：优先补齐迁移时会改变行为的 DSN 和类型语义，其次是 Go 标量函数/排序规则、内存快照和备份恢复。SQL 引擎已经提供的 FTS、JSON、WAL、RETURNING 等不需要再包装成“新增功能”。回调可通过公开 SQLite ABI 实现，并不需要修改系统 libsqlite3；主要成本是各后端 ABI、连接锁和生命周期的完整验证。
+Prioritize DSN and type semantics that change application behavior during migration, followed by Go scalar functions/collations, in-memory snapshots, and backup/restore. FTS, JSON, WAL, and RETURNING already provided by the SQL engine do not require new driver wrappers. Callbacks can use the public SQLite ABI without modifying system libsqlite3; the main cost is validating backend ABIs, connection locking, and ownership.
 
-## 已经具备，不应重复列为缺失
+## Existing capabilities
 
-| 能力 | 当前状态 | 真正剩余差距 |
+| Capability | Baseline implementation | Remaining gap |
 |---|---|---|
-| 每条物理连接初始化 | `WithInit` 对应 mattn 的 `SQLiteDriver.ConnectHook` 使用场景 | 名称不同，不等于缺功能；需要明确新连接都会执行 |
-| 运行时资源上限 | `Conn.SetLimit(category, value)`，负数查询当前值 | mattn 分开暴露 `GetLimit`/`SetLimit`；当前能力已经覆盖 |
-| 在线备份 | `BackupTo(ctx, filename)` / `Backup(ctx, *sql.Conn, filename)` | 仅 main 到按 filename 另开连接的文件，已存在的内容会被替换；缺少任意连接/附加 schema、恢复及进度控制 |
-| 原生扩展加载 | `WithExtensions` + `LoadExtension`，绝对路径、显式授权 | 系统 so/平台/静态 musl 的限制应保留，不能为 API 同名而放宽 |
-| 无参数 SQL 脚本 | `Exec` 接受 `;` 分隔，SQLite 自己解析边界 | 参数化脚本和多语句 Query 尚不支持 |
-| 元数据 | 声明类型名称、未知 nullability | 缺 `ColumnTypeScanType`；当前类型名称还会大写并去掉括号参数 |
-| 原生 SQL | savepoint、WAL、JSON、FTS、RTree、窗口 SQL 等按所选库能力执行 | 模块是否编译进库与 Go 接口是否存在应分开判断 |
+| Initialization of each physical connection | `WithInit` covers the use case of mattn's `SQLiteDriver.ConnectHook` | Document that initialization runs for every new connection; a different name does not imply a missing feature |
+| Runtime resource limits | `Conn.SetLimit(category, value)`; negative values query the current limit | mattn exposes separate `GetLimit`/`SetLimit` methods; the existing API already covers both operations |
+| Online backup | `BackupTo(ctx, filename)` / `Backup(ctx, *sql.Conn, filename)` | Copies main to a separately opened file connection, replacing existing contents; lacks arbitrary connections, attached schemas, restore, and progress control |
+| Native extension loading | `WithExtensions` + `LoadExtension`, with absolute paths and explicit authorization | Preserve system-library, platform, and static-musl restrictions rather than relaxing them for API naming parity |
+| SQL scripts without parameters | `Exec` accepts semicolon-separated statements; SQLite parses their boundaries | Parameterized scripts and multi-statement Query are unsupported |
+| Metadata | Declared type names and unknown nullability | Missing `ColumnTypeScanType`; type names are uppercased and size parameters removed |
+| Native SQL | Savepoints, WAL, JSON, FTS, RTree, window SQL, and other features of the selected library | Distinguish a module being compiled into SQLite from a Go wrapper being available |
 
-依据：[本库初始化流程][ours-driver]、[资源上限][ours-limits]、[备份][ours-backup]、[扩展][ours-extensions]、[脚本执行][ours-conn]、[rows 元数据][ours-rows]、[能力探测][ours-capabilities]；mattn 的 [ConnectHook][mattn-driver]、[limits][mattn-limits] 和 [backup][mattn-backup]。
+Sources: this driver's [initialization][ours-driver], [limits][ours-limits], [backup][ours-backup], [extensions][ours-extensions], [script execution][ours-conn], [row metadata][ours-rows], and [capability detection][ours-capabilities]; mattn's [ConnectHook][mattn-driver], [limits][mattn-limits], and [backup][mattn-backup].
 
-## 迁移价值最高的兼容差距
+## Compatibility gaps with the greatest migration impact
 
-### 1. DSN 配置不能静默失效
+### 1. DSN configuration must not silently disappear
 
-mattn 除 SQLite 原生 URI 参数外，还解析驱动专用参数及别名：
+Besides native SQLite URI parameters, mattn parses driver-specific parameters and aliases:
 
-| 类别 | mattn 参数 |
+| Category | mattn parameters |
 |---|---|
-| 等待、事务、时区、连接 | `_busy_timeout` / `_timeout`、`_txlock`、`_loc`、`_mutex` |
-| 常用 PRAGMA | `_foreign_keys` / `_fk`、`_journal_mode` / `_journal`、`_synchronous` / `_sync`、`_cache_size` |
-| 其他 PRAGMA | `_auto_vacuum` / `_vacuum`、`_defer_foreign_keys` / `_defer_fk`、`_ignore_check_constraints`、`_locking_mode` / `_locking`、`_query_only`、`_recursive_triggers` / `_rt`、`_secure_delete` |
-| 历史或需单独评估 | `_case_sensitive_like` / `_cslike`、`_writable_schema`、`_auth*` |
-| 语句复用 | `_stmt_cache_size`，默认 0；已确认 v1.14.52 和上述 master 都支持，不推断更早版本 |
+| Busy handling, transactions, timezone, connection | `_busy_timeout` / `_timeout`, `_txlock`, `_loc`, `_mutex` |
+| Common PRAGMAs | `_foreign_keys` / `_fk`, `_journal_mode` / `_journal`, `_synchronous` / `_sync`, `_cache_size` |
+| Other PRAGMAs | `_auto_vacuum` / `_vacuum`, `_defer_foreign_keys` / `_defer_fk`, `_ignore_check_constraints`, `_locking_mode` / `_locking`, `_query_only`, `_recursive_triggers` / `_rt`, `_secure_delete` |
+| Legacy options requiring separate assessment | `_case_sensitive_like` / `_cslike`, `_writable_schema`, `_auth*` |
+| Statement reuse | `_stmt_cache_size`, default 0; confirmed in v1.14.52 and the pinned master, without assuming support in earlier releases |
 
-以上来自 [mattn 实际参数解析][mattn-dsn]。`mode`、`cache`、`immutable`、`vfs` 则属于 [SQLite 原生 URI][sqlite-uri]，本库已经传入 `SQLITE_OPEN_URI`，不是缺少同名 Go option 就不可用。
+These come from [mattn's parameter parser][mattn-dsn]. In contrast, `mode`, `cache`, `immutable`, and `vfs` are [native SQLite URI parameters][sqlite-uri]. This driver already passes `SQLITE_OPEN_URI`; the absence of an identically named Go option does not make them unavailable.
 
-本库目前不解析上述 mattn 专用参数，而是原样把 DSN 交给 SQLite。对于 `file:app.db?_foreign_keys=on&_busy_timeout=100`，标准 SQLite/VFS 不会因为这两个名字而执行相应 PRAGMA 或设置 timeout；本库自己的默认 timeout 仍为 5000ms。普通 `app.db?_foreign_keys=on` 又与 URI 不同：SQLite 只把 `file:` 开头视为 URI，本库没有 mattn 那样的 DSN 拆解，存在把参数当作文件名的一部分的迁移风险。[本库打开连接][ours-driver]、[SQLite URI 识别规则][sqlite-uri]
+At the baseline, this driver passes DSNs directly to SQLite without parsing mattn-specific parameters. For `file:app.db?_foreign_keys=on&_busy_timeout=100`, standard SQLite/VFS implementations do not apply those PRAGMAs or change the timeout based on these names; the driver's default remains 5000ms. A plain `app.db?_foreign_keys=on` has an additional migration risk: SQLite recognizes only names starting with `file:` as URIs. Without mattn-style DSN parsing, the query can become part of the filename. See the [connection implementation][ours-driver] and [SQLite URI recognition rules][sqlite-uri].
 
-建议先提供明确的兼容策略：支持最常用且能可靠验证的参数，或对已知但不支持的 mattn 参数报错，并给出 typed option / `WithInit` 替代方式。不要简单拒绝所有未知 URI 参数，因为自定义 VFS 也可能需要参数。实现参数支持时，定义与 typed options 的优先级、别名冲突、非法值，以及对每条物理连接的应用顺序。`_defer_foreign_keys` 的事务重置语义也不能靠“建连接时设置过一次”推断永久有效。这里是行为兼容问题，不是 SQLite 缺少外键或 WAL。
+Provide an explicit compatibility policy: support common, verifiable parameters and reject known unsupported mattn parameters with an error and a typed-option or `WithInit` alternative. Do not reject all unknown URI parameters, because custom VFS implementations may need them. Define precedence relative to typed options, conflicting aliases, invalid values, and application order on every physical connection. `_defer_foreign_keys` resets at transaction boundaries; setting it once at connection creation does not make it permanent. This is a driver behavior gap, rather than missing foreign-key or WAL support in SQLite.
 
-不建议无条件照搬历史选项：mattn 的 `sqlite_userauth` 已明确返回不再支持的错误；SQLite 也标记 [`case_sensitive_like` 为弃用][sqlite-pragma]。本库继续固定 FULLMUTEX，并将 `_mutex=no` 列为显式不支持，比无声接受更清楚。[mattn userauth][mattn-auth]
+Do not copy legacy options indiscriminately. mattn's `sqlite_userauth` implementation explicitly reports that it is no longer supported, and SQLite marks [`case_sensitive_like` as deprecated][sqlite-pragma]. Keeping FULLMUTEX and explicitly rejecting `_mutex=no` is clearer than silently accepting it. See [mattn user authentication][mattn-auth].
 
-### 2. time.Time、BOOLEAN 与列元数据
+### 2. time.Time, BOOLEAN, and column metadata
 
-| 场景 | mattn 固定版本 | 本库固定 main |
+| Operation | Pinned mattn implementation | Pinned purego-sqlite main |
 |---|---|---|
-| 绑定 `time.Time` | 按 `SQLiteTimestampFormats[0]` 编码为 TEXT，格式数组公开可变 | 直接报不支持，要求调用者编码 |
-| 读取 DATE / DATETIME / TIMESTAMP 的 TEXT | 尝试公开格式列表，失败返回零值 `time.Time`，支持 `_loc` | 返回原始 string |
-| 读取这些声明列的 INTEGER | 大于 `1e12` 或小于 `-1e12` 按毫秒，其余按秒；转 `time.Time` | 返回 int64 |
-| 读取 BOOLEAN 的 INTEGER | `val > 0` 转 bool，负数得到 false | 返回 int64；绑定 bool 已支持 |
-| `Rows.ColumnTypes().ScanType()` | 提供声明类型映射，如 sql.NullTime、sql.NullBool、sql.NullInt64 | 无该可选接口，database/sql 只能用默认类型 |
-| 声明类型名称 | 原始 `sqlite3_column_decltype` 字符串 | 大写、去掉括号参数，例如 VARCHAR(50) 变 VARCHAR |
-| nullable | 硬编码 `(true, true)` | `(true, false)`，明确未知 |
+| Bind `time.Time` | Encodes TEXT using `SQLiteTimestampFormats[0]`; the exported format array is mutable | Rejects the value; callers must encode it |
+| Read TEXT from DATE / DATETIME / TIMESTAMP | Tries the exported formats, returns zero `time.Time` on failure, supports `_loc` | Returns the original string |
+| Read INTEGER from those declared types | Values above `1e12` or below `-1e12` are milliseconds; others are seconds; converts to `time.Time` | Returns int64 |
+| Read INTEGER from BOOLEAN | Converts using `val > 0`; negative values become false | Returns int64; binding bool is already supported |
+| `Rows.ColumnTypes().ScanType()` | Maps declared types to types such as sql.NullTime, sql.NullBool, and sql.NullInt64 | Optional interface absent; database/sql uses its default type |
+| Declared type name | Original `sqlite3_column_decltype` string | Uppercases and removes size parameters, e.g. VARCHAR(50) becomes VARCHAR |
+| Nullability | Hardcodes `(true, true)` | Returns `(true, false)`, explicitly reporting that nullability is unknown |
 
-依据：[mattn 时间格式][mattn-time-formats]、[绑定][mattn-time-bind]、[读取转换][mattn-time-read]、[元数据][mattn-types]；[本库绑定][ours-stmt] 和 [读取][ours-rows]。SQLite 自身只有存储类和类型亲和性，日期/布尔自动转换属于驱动策略，不是原生引擎功能缺失。[SQLite 类型系统][sqlite-types]
+Sources: mattn's [timestamp formats][mattn-time-formats], [binding][mattn-time-bind], [read conversion][mattn-time-read], and [metadata][mattn-types]; this driver's [binding][ours-stmt] and [rows][ours-rows]. SQLite itself has storage classes and type affinity; automatic date/boolean conversion is driver policy. See [SQLite's type system][sqlite-types].
 
-建议把 `time.Time` 绑定、日期读取与 bool 读取分开设计。可用显式 mattn 兼容模式保留既有用户的原始类型行为；不要全局改变已有结果值。`ScanType` 成本较小，但必须与实际返回值匹配。不要为“对齐”把未知 nullability 伪装成已知，也不必把全局可变格式表照抄到并发连接实现里。负数 boolean、非法日期、整数秒/毫秒边界、NULL、表达式列、时区/DST、schema 重新 prepare 和可选 row bridge 都需要验证。
+Design time binding, date reading, and boolean reading separately. An explicit mattn compatibility mode can preserve raw values for existing users. `ScanType` is relatively inexpensive but must agree with actual returned values. Do not present unknown nullability as known, or copy a globally mutable format table into a concurrent driver solely for parity. Validate negative booleans, invalid dates, integer second/millisecond boundaries, NULL, expression columns, timezone/DST, schema-triggered reprepare, and the optional row bridge.
 
-### 临时对照探针
+### Temporary comparison probe
 
-在 Linux 本机创建独立临时 Go 模块，通过本地 replace 分别指向上述两份固定源码；mattn 使用 CGO，purego-sqlite 分别跑 `CGO_ENABLED=1 go run -tags=sqlite_purego .` 和 `CGO_ENABLED=1 go run -tags=sqlite_dynamic .`。两种本库 backend 的结果一致。探针不属于仓库回归测试，也不能证明其他平台的行为。
+An independent temporary Go module on Linux used local replacements for the two pinned sources. mattn used CGO; this driver was tested with both `CGO_ENABLED=1 go run -tags=sqlite_purego .` and `CGO_ENABLED=1 go run -tags=sqlite_dynamic .`. Both driver backends produced the same results. This probe is not a repository regression test and does not establish behavior on other platforms.
 
-| 探针 | purego-sqlite | mattn |
+| Probe | purego-sqlite | mattn |
 |---|---|---|
-| `file:...?_foreign_keys=on&_busy_timeout=17` 后读取 PRAGMA | foreign_keys=0，busy_timeout=5000 | foreign_keys=1，busy_timeout=17 |
-| 绑定 `time.Time` | 明确拒绝 | 成功写入 |
-| BOOLEAN / TIMESTAMP 列扫描到 any | int64 / string | bool / time.Time |
-| 同列 `ScanType()` | interface{} / interface{} | sql.NullBool / sql.NullTime |
-| 普通绝对路径 `/tmp/.../name.db?_foreign_keys=on` | 文件名包含 `?_foreign_keys=on` | 剥离参数后创建 name.db |
+| Read PRAGMAs after opening `file:...?_foreign_keys=on&_busy_timeout=17` | foreign_keys=0, busy_timeout=5000 | foreign_keys=1, busy_timeout=17 |
+| Bind `time.Time` | Explicit rejection | Successful insert |
+| Scan BOOLEAN / TIMESTAMP into any | int64 / string | bool / time.Time |
+| `ScanType()` for those columns | interface{} / interface{} | sql.NullBool / sql.NullTime |
+| Plain absolute path `/tmp/.../name.db?_foreign_keys=on` | Filename includes `?_foreign_keys=on` | Removes parameters and creates name.db |
 
-最后一项符合本库现有“SQLite 原生 URI”契约，属于迁移陷阱，不能直接据此称驱动实现错误。加 `file:` 仅解决文件名识别，不会让 mattn 专用参数自动生效；这些参数仍须转换为本库 typed options / `WithInit`，或由新增的兼容层解析。
+The last result follows the driver's existing native-URI contract and is a migration trap, rather than sufficient evidence of a driver bug. Adding `file:` fixes filename recognition only; it does not apply mattn-specific options. Those still require typed options, `WithInit`, or a new compatibility parser.
 
-## mattn 已公开而本库缺少的扩展 API
+## Public mattn APIs missing from the baseline
 
-| 建议优先级 | 功能与 mattn 公开接口 | 用户价值、实现成本及系统库条件 |
+| Suggested priority | Feature and mattn API | Value, implementation cost, and system-library requirements |
 |---|---|---|
-| 高 | `RegisterFunc(name, impl, pure)` | 迁移 Go 自定义 SQL 标量函数、正则、业务计算。mattn 支持反射函数、变参、返回 `(value, error)`；`pure` 对应 DETERMINISTIC。本库需先建立通用 callback/value/result 桥，无需自定义 so。 |
-| 高 | `RegisterCollation(name, cmp)` | 自定义排序规则和字符串索引；同一套 callback 所有权可复用。比较函数需满足稳定全序关系。 |
-| 中高 | `Serialize(schema)` / `Deserialize(bytes, schema)` | 内存库加载、测试夹具、快照导出；无 Go 回调，适合作为独立增量。系统库可能未导出符号，须可选绑定和 ErrUnsupported；不能提高所有系统库最低要求。mattn 默认 amalgamation 有实现，`libsqlite3` 模式另需 `sqlite_serialize` 标签。 |
-| 中高 | `Backup(destSchema, srcConn, srcSchema)` + `Step/Remaining/PageCount/Finish/Close` | 比现有文件备份多出恢复、内存到内存、ATTACH schema 和进度。可优先提供 context 管理的一次性连接到连接复制与进度配置，未必必须照搬手动 native handle。双方必须属于同一个 SQLite 库实例。 |
-| 中 | `RegisterAggregator(name, ctor, pure)` | Go 聚合器的 Step/Done；每组状态要独立清理，覆盖空输入、Step 报错、取消、最终回收。回调基础设施稳定后再加。 |
-| 中 | `RegisterUpdateHook` / `RegisterCommitHook` / `RegisterRollbackHook` | 本连接写入通知、提交否决、事务事件。回调期间不能修改触发它的连接；通知不等于完整 CDC，update hook 不覆盖 WITHOUT ROWID，并有 REPLACE/截断删除例外。 |
-| 中 | `RegisterAuthorizer` | 控制不可信 SQL 的表/列/操作访问；发生于 prepare 或自动 reprepare，不能只套在 Exec 外层。mattn 的签名只传 action 加三个字符串；新设计可保留 SQLite 完整元数据。 |
-| 中 | `SetTrace(*TraceConfig)`、`TraceInfo` | SQL 和性能观测；mattn 需 `sqlite_trace` 或 `trace` 标签。不要默认展开 SQL 参数，避免普通日志无意记录用户数据；回调负载、生命周期与其他 hooks 共用基础设施。 |
-| 中低 | `GetFilename`、`AutoCommit`、`SQLiteStmt.Readonly` | 轻量状态/诊断访问。本库内部已经绑定相应原生 API，只是未公开；可按真实需求提供受锁保护的方法，不暴露裸句柄。 |
-| 中低 | `SetFileControlInt` / `SetFileControlInt64` | 特定 VFS 调参、持久 WAL 等。`void*` 的真实类型由 opcode 决定，不能把任意 opcode 都当 int 指针；建议白名单 typed 操作，正确处理 NOTFOUND 和直接返回码。 |
-| 中低 | `SQLiteStmt.ColumnTableName` | `sqlite_column_metadata` 标签提供结果列来源表；依赖库编译 COLUMN_METADATA，与已有声明类型名称不是同一功能。 |
-| 中、成本较低 | `Error.SystemErrno`、具名 extended error 常量 | mattn 在部分 CANTOPEN/IOERR 错误里补充系统 errno，并提供 ErrConstraintUnique/ErrConstraintForeignKey/ErrBusySnapshot 等常量。本库已有 Code/ExtendedCode/Message 和 Busy/Locked/Constraint/ReadOnly 四类 errors.Is，但缺同等诊断便捷性；应保留原始 native code，不把未知 errno 误报为确定的系统原因。 |
-| 低、需求驱动 | `CreateModule` / `DeclareVTab`、Module/VTab/VTabCursor 等 | mattn 的 `sqlite_vtable` / `vtable` 标签开放 Go 虚拟表模块；需要大量函数指针、结构体 ABI、游标/错误内存和生命周期管理。比“执行原生 FTS5 SQL”复杂很多。 |
-| 低、需求驱动 | `RegisterPreUpdateHook`、`SQLitePreUpdateData.Old/New/Depth/Count` | mattn 的 `sqlite_preupdate_hook` 标签才有真正实现，默认方法是 no-op；依赖 SQLite 编译启用 PREUPDATE_HOOK，不应承诺任何系统库都可用。 |
+| High | `RegisterFunc(name, impl, pure)` | Migrates Go scalar functions, regular expressions, and application calculations. Supports reflection, variadic arguments, and `(value, error)` returns; `pure` maps to DETERMINISTIC. Requires shared callback/value/result infrastructure, without a custom shared library. |
+| High | `RegisterCollation(name, cmp)` | Custom ordering and string indexes; can reuse callback ownership infrastructure. Comparators must define a stable total order. |
+| Medium-high | `Serialize(schema)` / `Deserialize(bytes, schema)` | In-memory loading, test fixtures, and snapshots; no Go callbacks, making this an independent increment. Bind symbols optionally and return ErrUnsupported when absent, preserving older system libraries. mattn's default amalgamation implements this; its `libsqlite3` mode additionally requires the `sqlite_serialize` tag. |
+| Medium-high | `Backup(destSchema, srcConn, srcSchema)` + `Step/Remaining/PageCount/Finish/Close` | Adds restore, memory-to-memory copies, ATTACH schemas, and progress. A context-managed connection-to-connection copy with progress options can provide this without exposing manually managed native handles. Both connections must belong to the same SQLite library instance. |
+| Medium | `RegisterAggregator(name, ctor, pure)` | Go Step/Done aggregation; each group needs independent cleanup, including empty input, Step errors, cancellation, and final destruction. Add after callback infrastructure is stable. |
+| Medium | `RegisterUpdateHook` / `RegisterCommitHook` / `RegisterRollbackHook` | Connection-local write notifications, commit vetoes, and transaction events. Callbacks cannot modify the invoking connection. Update notifications are not complete CDC: WITHOUT ROWID tables, REPLACE, and truncate-delete optimizations have exceptions. |
+| Medium | `RegisterAuthorizer` | Controls table, column, and operation access for untrusted SQL during prepare or automatic reprepare; wrapping Exec alone is insufficient. mattn passes an action and three strings; a new API can preserve SQLite's complete metadata. |
+| Medium | `SetTrace(*TraceConfig)`, `TraceInfo` | SQL and performance observability; mattn requires `sqlite_trace` or `trace`. Expanded SQL must be opt-in to avoid recording parameter values unexpectedly. Reuse hook ownership infrastructure. |
+| Medium-low | `GetFilename`, `AutoCommit`, `SQLiteStmt.Readonly` | Lightweight diagnostics. This driver already binds the native APIs internally; expose locked methods as needed without raw handles. |
+| Medium-low | `SetFileControlInt` / `SetFileControlInt64` | VFS configuration and persistent WAL. The opcode determines the actual `void*` type, so arbitrary opcodes cannot safely receive an int pointer. Prefer typed, allowlisted operations with correct NOTFOUND and direct-return-code handling. |
+| Medium-low | `SQLiteStmt.ColumnTableName` | The `sqlite_column_metadata` tag exposes source tables for result columns; requires COLUMN_METADATA in the library and differs from declared type names. |
+| Medium, relatively low cost | `Error.SystemErrno`, named extended error constants | mattn adds system errno to some CANTOPEN/IOERR errors and provides constants such as ErrConstraintUnique, ErrConstraintForeignKey, and ErrBusySnapshot. This driver has Code/ExtendedCode/Message and errors.Is support for Busy/Locked/Constraint/ReadOnly, but lacks equivalent diagnostic convenience. Preserve native codes and do not misreport unknown errno as a definite system cause. |
+| Low, demand-driven | `CreateModule` / `DeclareVTab`, Module/VTab/VTabCursor | mattn's `sqlite_vtable` / `vtable` tags expose Go virtual tables. Requires substantial function-pointer and structure ABI work, cursor/error memory ownership, and lifecycle management; much more involved than running native FTS5 SQL. |
+| Low, demand-driven | `RegisterPreUpdateHook`, `SQLitePreUpdateData.Old/New/Depth/Count` | mattn has a real implementation only with `sqlite_preupdate_hook`; the default method is a no-op. Requires PREUPDATE_HOOK in SQLite and cannot be promised for every system library. |
 
-API 证据：[mattn 函数/聚合/排序规则/hooks][mattn-callbacks]、[序列化实现][mattn-serialize]、[系统库序列化 stub][mattn-serialize-omit]、[backup][mattn-backup]、[trace][mattn-trace]、[连接状态/file control][mattn-limits]、[stmt Readonly][mattn-readonly]、[column metadata][mattn-column-metadata]、[system errno][mattn-errno]、[具名错误码][mattn-errors]、[vtable][mattn-vtable]、[preupdate][mattn-preupdate]、[preupdate 默认 stub][mattn-preupdate-omit]。
+API sources: mattn's [functions, aggregators, collations, and hooks][mattn-callbacks], [serialization][mattn-serialize], [system-library serialization stub][mattn-serialize-omit], [backup][mattn-backup], [trace][mattn-trace], [connection state and file control][mattn-limits], [statement Readonly][mattn-readonly], [column metadata][mattn-column-metadata], [system errno][mattn-errno], [named error codes][mattn-errors], [virtual tables][mattn-vtable], [preupdate][mattn-preupdate], and [default preupdate stub][mattn-preupdate-omit].
 
-原生约束：[函数注册和销毁][sqlite-functions]、[在线备份][sqlite-backup]、[serialize][sqlite-serialize]、[deserialize][sqlite-deserialize]、[update hook][sqlite-update]、[commit/rollback hook][sqlite-commit]、[authorizer][sqlite-authorizer]、[trace_v2][sqlite-trace]、[file_control][sqlite-filecontrol]。这些是公开 ABI；通常不必重新编译 so。只有所选库省略相关 API 或模块时，才需要换库/改构建。
+Native contracts: [function registration/destruction][sqlite-functions], [online backup][sqlite-backup], [serialize][sqlite-serialize], [deserialize][sqlite-deserialize], [update hooks][sqlite-update], [commit/rollback hooks][sqlite-commit], [authorizer][sqlite-authorizer], [trace_v2][sqlite-trace], and [file_control][sqlite-filecontrol]. These are public ABIs and generally require no shared-library rebuild. Selecting another library or changing build options is necessary only when the selected library omits an API or module.
 
-### 多语句与 stmt cache 需要单独判断
+### Multi-statement execution and statement caching
 
-mattn 的 Exec 循环解析 SQL tail，并按每条语句消耗参数；Query 也循环 tail，但只把最后的 rows 返回给调用者。它没有实现 `RowsNextResultSet`，不能说“mattn 支持通过 NextResultSet 取得每个结果集”。本库当前只允许无参数 Exec 脚本，Prepare、Query 与有参数 Exec 都要求单条语句。[mattn 执行逻辑][mattn-scripts]、[本库执行逻辑][ours-conn]、[本库单语句检查][ours-stmt]
+mattn's Exec parses each SQL tail and consumes parameters per statement. Query also processes tails, but returns only the final rows. It does not implement `RowsNextResultSet`, so it does not expose every result through NextResultSet. At the baseline, this driver accepts only parameterless Exec scripts; Prepare, Query, and parameterized Exec require a single statement. See [mattn's execution logic][mattn-scripts], this driver's [execution][ours-conn], and [single-statement checks][ours-stmt].
 
-参数化脚本对迁移有价值，但要明确参数跨语句分配、命名参数复用、错误后已执行部分的语义和最后结果。多个可遍历结果集是另一项功能，不能以 mattn parity 为由混入。固定版本 mattn 的 `_stmt_cache_size` 说明其提供可选连接缓存；本库没有透明缓存，但调用者已经能复用 `sql.Stmt`。缓存应在真实 workload 证明收益后再考虑，必须包括 schema 变化、驱动状态、连接关闭和失败 eviction 的验证。[mattn 缓存配置][mattn-dsn]
+Parameterized scripts have migration value, but require defined parameter allocation across statements, named-parameter reuse, partial execution after an error, and final-result semantics. Traversable multiple result sets are a separate feature. The pinned mattn version offers an optional connection cache through `_stmt_cache_size`; this driver lacks transparent caching, while callers can already reuse `sql.Stmt`. Validate benefits on actual workloads, including schema changes, driver state, connection closure, and eviction after errors. See [mattn's cache configuration][mattn-dsn].
 
-透明语句缓存有明确的通用适用场景：调用者反复通过 `db.Exec` / `db.Query` 执行相同 SQL，而没有显式复用 `sql.Stmt`。它可以减少反复 prepare/finalize；对已经复用 statement 的循环，以及 FullScan 中逐行取列的开销，不能据此承诺改善。建议做每物理连接有界、默认关闭的候选方案，测重复 SQL、不同 SQL、schema 变更和大参数释放后的收益与资源占用，再决定是否启用。mattn v1.14.52 的 [配置][mattn-cache-stable]和 [LRU/清理实现][mattn-cache-impl]可作为参照，不需要修改官方 so。
+A bounded, default-off cache per physical connection can reduce prepare/finalize overhead when applications repeatedly call `db.Exec` / `db.Query` with the same SQL without reusing a statement. It does not imply improvements for explicitly prepared loops or per-row FullScan reads. Measure repeated SQL, distinct SQL, schema changes, and memory retention after large parameters before enabling it. mattn v1.14.52's [configuration][mattn-cache-stable] and [LRU/cleanup implementation][mattn-cache-impl] are useful references. No custom SQLite library is required.
 
-## SQLite 有原生 API，但不属于本次已确认的 mattn 缺口
+## Native SQLite APIs outside the confirmed mattn gaps
 
-检查上述固定源码的公开 Go 方法及可选实现后，以下不应标记成“mattn 已有，本库必须追平”：增量 BLOB 句柄 I/O、session/changeset、Go 自定义窗口聚合 xInverse/xValue、独立 Go FTS5 tokenizer 注册、通用 db_status/stmt_status 等完整统计 API、Go 自定义 VFS。SQLite 有相应底层能力，并不意味着 mattn 已提供同样的公开 Go API；通过 C 扩展使用它们也不同于驱动内建封装。[mattn 固定源码清单][mattn-tree]、[SQLite BLOB API][sqlite-blob]、[Session 扩展][sqlite-session]、[窗口函数注册][sqlite-functions]、[FTS5 tokenizer][sqlite-fts5]
+Inspection of the pinned public Go API and optional implementations did not establish mattn parity requirements for incremental BLOB handles, sessions/changesets, custom Go window functions with xInverse/xValue, standalone Go FTS5 tokenizer registration, comprehensive db_status/stmt_status statistics, or custom Go VFS implementations. Native SQLite capabilities and use through C extensions do not establish equivalent built-in Go wrappers. Sources: [pinned mattn tree][mattn-tree], [SQLite BLOB API][sqlite-blob], [Session extension][sqlite-session], [window function registration][sqlite-functions], and [FTS5 tokenizers][sqlite-fts5].
 
-`sqlite_userauth` 的历史类型/API、mattn 多个 SQLite 编译开关也不应自动成为当前路线图；后者先通过 Connector 的所选库 CompileOptions/HasFeature 诊断即可。本库应继续允许使用系统官方 so。[本库能力探测][ours-capabilities]
+Historical `sqlite_userauth` types/APIs and every mattn compile switch should not automatically become roadmap items. Diagnose library build features through Connector CompileOptions/HasFeature first. The driver should continue supporting official system shared libraries. See [capability detection][ours-capabilities].
 
-## 回调可以实现，但应先验证共用基础设施
+## Callback infrastructure and validation
 
-PureGo 0.11.3 已有 `NewCallback`；Unix 和 Windows 的调用约定实现不同，callback 槽位为进程级有限资源且不回收。新连接或每次注册都生成新的闭包 trampoline，会在正常连接 churn 中耗尽。建议每类签名只创建少数进程级 trampoline，再以整数 token 查找连接拥有的 Go 回调；连接关闭、替换注册和失败路径释放 token/Go 引用。[PureGo Unix callbacks][purego-unix]、[Windows callbacks][purego-windows]
+PureGo 0.11.3 provides `NewCallback`, with different Unix and Windows calling conventions. Callback slots are finite process-wide resources and are not reclaimed. Allocating a new closure trampoline for every connection or registration would exhaust them during normal connection churn. Prefer a small number of process-wide trampolines per signature and an integer-token registry for connection-owned Go callbacks. Release tokens and Go references on closure, replacement, and failure. See [PureGo Unix callbacks][purego-unix] and [Windows callbacks][purego-windows].
 
-需验证的约束：
+Validate the following constraints:
 
-1. PureGo amd64/arm64 的 Linux、macOS、Windows，以及已有 BSD 支持范围；Windows cdecl/整数宽度/void 返回、Mac arm64 原生回调和 race/cgocheck 的真实运行，而非只交叉编译。
-2. MIPS 等 CGO 后端使用编译器确定类型的 C trampoline 和安全 token 注册，不依赖 PureGo 对不支持架构的 callback；支持 CGO 不意味着自动获得 PureGo callback。
-3. native 仅存 token，不能保留 Go 指针；SQLite value/context/text/blob 指针通常只在回调期间有效，返回 TEXT/BLOB 明确复制或使用 native 所有权。
-4. `Conn.mu` 当前覆盖执行；回调通常由已持锁的 `sqlite3_step/prepare` 同步触发。用户回调如果重入同一连接会死锁或违反 SQLite 限制，需定义并验证错误/禁止重入契约；不能粗暴在 native 调用时解锁。
-5. 回调 panic 不得越过 FFI 边界；标量/聚合尽可能转 SQLite error，authorizer/commit 则使用保守拒绝值；hook/trace 的错误如何报告需要 API 设计。
-6. 注册替换、失败、关闭、执行取消、聚合析构、GC 压力与一万次连接 churn 都必须有验证；可用 `create_function_v2` destructor 时遵守 native 销毁顺序，回调执行中不能提前释放 token。
-7. 自定义 Go 函数仍可处理 float64：SQLite xFunc 本身收 context/argc/argv 指针，数值经 sqlite3_value_double 与 sqlite3_result_double 传递；无需把任意 Go 函数签名直接当 native callback，也不应因 float 返回 ABI 就宣布无法支持。[SQLite 函数 ABI][sqlite-functions]
+1. Execute native tests for PureGo amd64/arm64 on Linux, macOS, Windows, and the supported BSD targets. Cross-compilation alone does not validate Windows cdecl, integer widths, void returns, macOS arm64 callbacks, or race/cgocheck behavior.
+2. CGO backends such as MIPS need compiler-typed C trampolines and safe token registration. CGO support does not automatically provide PureGo callbacks on unsupported architectures.
+3. Native code must retain tokens rather than Go pointers. SQLite value/context/text/blob pointers usually remain valid only during the callback. Returned TEXT/BLOB values need explicit copying or native ownership.
+4. Execution currently holds `Conn.mu`. Callbacks are typically invoked synchronously by `sqlite3_step/prepare` while the lock is held. Same-connection reentry can deadlock or violate SQLite restrictions; define and test a rejection contract rather than unlocking around native calls.
+5. Panics must not cross the FFI boundary. Convert scalar/aggregate panics to SQLite errors where possible; authorizer/commit callbacks should fail closed. Hook and trace error reporting requires an explicit API contract.
+6. Test replacement, failed registration, closure, cancellation, aggregate destruction, GC pressure, and 10,000 connection cycles. Respect `create_function_v2` destructor ordering and retain tokens while callbacks are active.
+7. Go functions can support float64: SQLite xFunc receives context/argc/argv pointers, with values transferred through sqlite3_value_double and sqlite3_result_double. Arbitrary Go signatures need not become native callback signatures. A floating-point return ABI concern alone does not make scalar functions impossible. See the [SQLite function ABI][sqlite-functions].
 
-这些是设计和验证要求，尚未在本次调研中证明整套跨平台 callback 已能安全运行。callback 的每行 native→Go 成本也需要单独 benchmark，避免把功能兼容误写成速度优势。
+These are design and validation requirements; the baseline research does not establish that a complete cross-platform callback implementation is safe. Benchmark native-to-Go callback costs separately rather than presenting functional compatibility as a performance advantage.
 
-## 建议实施顺序与验收
+## Suggested implementation sequence and acceptance criteria
 
-1. **先解决迁移行为**：常用 DSN 支持或明确报错、time.Time 输入与可选日期/布尔兼容、ScanType/声明类型契约。用同数据/同 SQL 的 mattn 对照测试；原始模式行为保留。
-2. **独立、无需回调的增量**：具名错误码/SystemErrno、可选 serialize/deserialize、连接到连接的备份/恢复；可按需求先加 GetFilename/Autocommit。旧系统 so 缺符号应仍能正常使用其余驱动功能。透明语句缓存可另作性能实验，收益通过普通重复 SQL 工作负载验证。
-3. **一次搭好回调所有权**：先标量函数和排序规则，随后聚合、authorizer、事务 hooks、trace。提供 `WithInit` 注册范例与连接池正确用法；至少系统 so 和 embed 都跑，不要求专用辅助函数。
-4. **高级特性按调用方需求追加**：vtable、preupdate、file control、参数化脚本。不要为了列表齐全把所有历史开关和裸 C 指针开放给用户。
+1. **Migration behavior:** common DSNs with explicit errors for unsupported options, time.Time input, optional date/boolean conversion, and ScanType/declared-type contracts. Compare identical data and SQL with mattn while preserving raw-mode behavior.
+2. **Independent additions without callbacks:** named error codes/SystemErrno, optional serialization/deserialization, and connection-to-connection backup/restore; add GetFilename/AutoCommit where needed. Missing symbols in older system libraries must not disable unrelated features. Evaluate transparent statement caching separately on ordinary repeated-SQL workloads.
+3. **Shared callback ownership:** scalar functions and collations first, then aggregators, authorizer, transaction hooks, and trace. Provide `WithInit` registration examples and correct pool usage. Test both system libraries and embed without requiring helper symbols.
+4. **Advanced features driven by callers:** virtual tables, preupdate, file control, and parameterized scripts. Avoid exposing every historical switch or raw C pointer merely to complete a feature list.
 
-## 本次完成的验证
+## Baseline validation
 
-- 核对工作区与 main 的核心实现一致，纯 Go backend 的 `CGO_ENABLED=0 go test -count=1 ./...` 通过。
-- 在独立临时模块执行上述 DSN、time.Time、BOOLEAN/TIMESTAMP、ScanType 和普通文件名探针；分别验证 PureGo 和动态 CGO backend，与固定 mattn 源码对照。
-- 对照 mattn 公开 API、可选 build tags 和 SQLite 官方 ABI 文档，列出已有能力、真实缺口、实现约束与后续验收要求。
-- 以上为实施前的调研验证；后续实现和实际测试范围以兼容性指南及 PR 检查为准。
+- Confirmed that the research checkout and pinned main share the assessed core implementation; `CGO_ENABLED=0 go test -count=1 ./...` passed.
+- Ran the temporary DSN, time.Time, BOOLEAN/TIMESTAMP, ScanType, and filename probes against the pinned mattn source using both PureGo and dynamic CGO backends.
+- Checked public mattn APIs, optional build tags, and official SQLite ABI documentation to distinguish existing capabilities, actual gaps, implementation constraints, and acceptance criteria.
+- These checks predate implementation. Consult the compatibility guide and PR checks for subsequent implementation and validation coverage.
 
 [mattn-tree]: https://github.com/mattn/go-sqlite3/tree/45f73f261e58ede2a09b91a392ef13a5ec0bb0fa
 [mattn-release]: https://github.com/mattn/go-sqlite3/releases/tag/v1.14.52
