@@ -303,6 +303,7 @@
     "This EPYC 9V74 host differs from the prior EPYC 7763 and Ryzen runs; absolute times are not a before/after comparison.",
     "Native source/options match mattn within each executable; modernc uses the same source version with different compile options.",
     "The core table selects BenchmarkSQLite; compatibility tables select BenchmarkMattnParity or BenchmarkMattnMedium plus three SQL controls.",
-    "The released PureGo dependency and current callback declarations are measured; upstream PR 562 is not included."
+    "The released PureGo dependency and current callback declarations are measured; upstream PR 562 is not included.",
+    "Main-table ratios divide by the displayed pooled mattn median; separate matching-run tables show paired ratios and their actual denominators. Raw samples are unchanged."
   ]
 }
