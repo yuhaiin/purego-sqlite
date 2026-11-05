@@ -156,7 +156,7 @@ jobs:
             fi
             CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 go test -timeout 3m ./...
           fi
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: native-${{ matrix.os }}-${{ matrix.arch }}
@@ -183,7 +183,7 @@ jobs:
           BENCH_BACKEND=cgo-dynamic scripts/benchmark.sh -benchtime=1x -count=1
           cp benchmarks/results/local-raw.txt benchmarks/results/local-cgo-dynamic.txt
           python3 benchmarks/compare.py purego=benchmarks/results/local-purego.txt cgo=benchmarks/results/local-cgo.txt cgo-dynamic=benchmarks/results/local-cgo-dynamic.txt > benchmarks/results/local-five-way.md
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: benchmark-smoke
