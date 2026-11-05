@@ -54,7 +54,7 @@ Set `SQLITE_EMBED_NATIVE_DIR` to a directory containing the embed asset
 
 ```sh
 export TMPDIR=/dev/shm GOMAXPROCS=4 BENCH_CPUSET=0-3
-python3 scripts/build-native.py
+go run ./internal/cmd/build-native
 for backend in purego cgo-dynamic cgo; do
   BENCH_BACKEND="$backend" scripts/benchmark.sh -benchtime=300ms -count=5
   cp benchmarks/results/local-raw.txt "benchmarks/results/local-$backend.txt"
@@ -362,7 +362,7 @@ from the embed asset and `src/sqlite3.h` from its matching pinned source, then
 use the commands above. To build a local fixture instead:
 
 ```sh
-python3 scripts/build-native.py --row-bridge --exec-bridge --output .native/row-bridge
+go run ./internal/cmd/build-native --row-bridge --exec-bridge --output .native/row-bridge
 ```
 
 Select that directory for the library. Its GCC engine differs from the
@@ -434,8 +434,9 @@ PureGo improvements:
 - Prepare, TEXT/BLOB binding and metadata reads avoid reflective conversion.
   Go buffer arguments retain direct `SyscallN` lifetime tracking. Floating-point
   arguments/returns keep their typed ABI bindings.
-- Column declaration types are loaded only when `ColumnTypes` requests them,
-  and refreshed after each query's initial step/reprepare. Parameter names are
+- Column declaration types are loaded when `ColumnTypes` or opt-in
+  `WithMattnTypes` decoding needs them, and refreshed after each query's initial
+  step/reprepare. Parameter names are
   loaded only for named arguments or detailed validation errors.
 - Prepare reuses at most 4 KiB of NUL-terminated SQL scratch space per connection.
   SQLite retains its own SQL copy. Large inputs use temporary storage, and Close

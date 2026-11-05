@@ -236,7 +236,8 @@ no canceled watcher survives its operation. Native busy-handler sleeps and nativ
 extensions can delay cancellation; the configured busy timeout bounds ordinary
 lock waits, and extensions must cooperate with SQLite interruption. The default
 busy timeout is 5 seconds. Go callbacks are installed only when explicitly
-registered with the function, aggregate or collation APIs.
+registered through the function, aggregate, collation, hook, authorizer or trace
+APIs.
 
 `WithInit(func(context.Context, *sqlite.Conn) error)` runs on **each new physical
 connection** before pooling. Use it for per-connection PRAGMAs and extensions.
@@ -270,8 +271,22 @@ Unknown feature names return `ErrUnsupported`.
 | Window functions / UPSERT / generated columns / RETURNING / STRICT | SQLite 3.25 / 3.24 / 3.31 / 3.35 / 3.37+ respectively | Native SQL |
 | Trusted extension loading | Load-extension symbols and supported secure ABI | Opt-in; Apple arm64 requires the CGO backend |
 | Custom Go SQL scalar functions, aggregates, collations | Public SQLite callback APIs | `Conn.RegisterFunc`, `RegisterAggregator`, `RegisterCollation` |
-| Hooks, authorizer, trace, Go FTS5 tokenizers | Additional native callback APIs | Not implemented |
-| Session/changesets, incremental BLOB I/O, serialization | Additional native APIs | Not implemented |
+| Update / commit / rollback hooks | Public SQLite hook APIs | `Conn.RegisterUpdateHook`, `RegisterCommitHook`, `RegisterRollbackHook` |
+| SQL authorizer | `sqlite3_set_authorizer`; may be omitted from the native build | `Conn.RegisterAuthorizer`; `HasFeature("authorizer")` |
+| Statement / profile / row / close tracing | `sqlite3_trace_v2`; expanded text also needs `sqlite3_expanded_sql` | `Conn.SetTrace`; `HasFeature("trace")`; expanded SQL is opt-in |
+| Serialization / deserialization | `sqlite3_serialize` / `sqlite3_deserialize` exports | `Conn.Serialize`, `Deserialize` and Context variants; `HasFeature("serialize")` |
+| Online backup / restore across connections and attached schemas | Public SQLite backup APIs; both connections use the same native library instance | `Conn.BackupFrom`, `BackupTo`; progress and cancellation supported |
+| Connection-local statement cache | Core SQLite prepare / reset / finalize APIs | Opt-in `WithStatementCache` / `_stmt_cache_size`; disabled by default |
+| Runtime limits / filename / transaction state / statement read-only status | Public SQLite connection and statement APIs | `Conn.SetLimit`, `GetFilename`, `AutoCommit`; driver statement `Readonly` |
+| Custom Go FTS5 tokenizers / virtual-table modules | Additional native extension APIs | Go registration APIs not implemented; native extensions may provide them |
+| Session/changesets, incremental BLOB I/O | Additional native APIs | Not implemented |
+
+Optional image, authorizer and trace APIs return `ErrUnsupported` when the
+selected native library lacks their symbols; ordinary SQL remains available.
+Register callbacks on each physical connection through `WithInit`. See
+[Go SQL extensions](docs/mattn-compatibility.md) and
+[snapshots, backup, caching and hooks](docs/mattn-medium.md) for ownership,
+callback reentry restrictions and API-specific limits.
 
 The optional bundled build enables FTS5, RTree, DBSTAT, math and native JSON/JSONB.
 It does not enable every optional SQLite compile flag.
