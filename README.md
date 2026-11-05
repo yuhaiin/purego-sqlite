@@ -263,7 +263,7 @@ Unknown feature names return `ErrUnsupported`.
 
 | Capability | Native prerequisite | Driver support |
 |---|---|---|
-| CRUD, prepared statements, savepoints, WAL, backup | SQLite 3.20+; thread-safe build | Yes |
+| CRUD, prepared statements, savepoints, WAL | SQLite 3.20+; thread-safe build | Yes |
 | FTS3 / FTS4 / FTS5 | Corresponding native module | Yes; detected separately |
 | JSON | JSON enabled (built in by default since 3.38) | Yes; runtime probe |
 | JSONB | SQLite 3.45+ with JSON | Yes; runtime probe |

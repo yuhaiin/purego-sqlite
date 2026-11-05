@@ -2,7 +2,13 @@
 
 Research date: 2026-11-05. This document assesses API coverage and migration semantics; it does not commit to implementing every API listed here.
 
-This is a baseline assessment of the main snapshot before implementation. See the [compatibility guide](mattn-compatibility.md) for the implemented high-priority features, current APIs, and validation. Medium-priority features remain follow-up work.
+This is a historical assessment of the main snapshot before implementation.
+See the [compatibility guide](mattn-compatibility.md) for the implemented DSN,
+type-conversion and Go SQL extension APIs, and
+[snapshots, backup, caching and hooks](mattn-medium.md) for the implemented
+connection APIs and their validation. The gaps below describe that baseline;
+consult the [current capability matrix](../README.md#native-features-and-capabilities)
+for present support.
 
 ## Comparison scope
 
