@@ -52,6 +52,29 @@ static uintptr_t linked_symbol(const char *name) {
  if (!strcmp(name, "sqlite3_backup_init")) return (uintptr_t)&sqlite3_backup_init;
  if (!strcmp(name, "sqlite3_backup_step")) return (uintptr_t)&sqlite3_backup_step;
  if (!strcmp(name, "sqlite3_backup_finish")) return (uintptr_t)&sqlite3_backup_finish;
+ if (!strcmp(name, "sqlite3_backup_remaining")) return (uintptr_t)&sqlite3_backup_remaining;
+ if (!strcmp(name, "sqlite3_backup_pagecount")) return (uintptr_t)&sqlite3_backup_pagecount;
+#ifndef SQLITE_OMIT_DESERIALIZE
+ if (!strcmp(name, "sqlite3_serialize")) return (uintptr_t)&sqlite3_serialize;
+#endif
+#ifndef SQLITE_OMIT_DESERIALIZE
+ if (!strcmp(name, "sqlite3_deserialize")) return (uintptr_t)&sqlite3_deserialize;
+#endif
+ if (!strcmp(name, "sqlite3_malloc64")) return (uintptr_t)&sqlite3_malloc64;
+ if (!strcmp(name, "sqlite3_system_errno")) return (uintptr_t)&sqlite3_system_errno;
+ if (!strcmp(name, "sqlite3_sourceid")) return (uintptr_t)&sqlite3_sourceid;
+ if (!strcmp(name, "sqlite3_update_hook")) return (uintptr_t)&sqlite3_update_hook;
+ if (!strcmp(name, "sqlite3_commit_hook")) return (uintptr_t)&sqlite3_commit_hook;
+ if (!strcmp(name, "sqlite3_rollback_hook")) return (uintptr_t)&sqlite3_rollback_hook;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+ if (!strcmp(name, "sqlite3_set_authorizer")) return (uintptr_t)&sqlite3_set_authorizer;
+#endif
+#ifndef SQLITE_OMIT_TRACE
+ if (!strcmp(name, "sqlite3_trace_v2")) return (uintptr_t)&sqlite3_trace_v2;
+#endif
+#ifndef SQLITE_OMIT_TRACE
+ if (!strcmp(name, "sqlite3_expanded_sql")) return (uintptr_t)&sqlite3_expanded_sql;
+#endif
  if (!strcmp(name, "sqlite3_create_function_v2")) return (uintptr_t)&sqlite3_create_function_v2;
  if (!strcmp(name, "sqlite3_create_collation_v2")) return (uintptr_t)&sqlite3_create_collation_v2;
  if (!strcmp(name, "sqlite3_user_data")) return (uintptr_t)&sqlite3_user_data;

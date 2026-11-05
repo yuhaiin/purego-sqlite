@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -30,6 +31,7 @@ func HasFeature(name string) (bool, error) {
 	return c.HasFeature(name)
 }
 func (c *Connector) Version() string     { return c.api.Libversion() }
+func (c *Connector) SourceID() string    { return c.api.SourceID() }
 func (c *Connector) VersionNumber() int  { return int(c.api.LibversionNumber()) }
 func (c *Connector) LibraryPath() string { return c.api.Path }
 func (c *Connector) CompileOptions() []string {
@@ -72,6 +74,12 @@ func (c *Connector) HasFeature(name string) (bool, error) {
 		return c.api.ReadRow != nil, nil
 	case "exec_scalar_v1":
 		return c.api.ExecScalar != nil, nil
+	case "serialize":
+		return c.api.Serialize != nil && c.api.Deserialize != nil, nil
+	case "authorizer":
+		return c.api.SetAuthorizer != nil, nil
+	case "trace":
+		return c.api.TraceV2 != nil, nil
 	default:
 		return false, fmt.Errorf("%w: unknown feature %q", ErrUnsupported, name)
 	}
@@ -86,7 +94,7 @@ func (c *Connector) HasFeature(name string) (bool, error) {
 		return true, nil
 	}
 	// Only absence errors indicate unavailable features; other failures propagate.
-	if e, ok := err.(*Error); ok && e.Code == 1 && (strings.Contains(e.Message, "no such module") || strings.Contains(e.Message, "no such function") || strings.Contains(e.Message, "no such table")) {
+	if e, ok := errors.AsType[*Error](err); ok && e.Code == 1 && (strings.Contains(e.Message, "no such module") || strings.Contains(e.Message, "no such function") || strings.Contains(e.Message, "no such table")) {
 		return false, nil
 	}
 	return false, err

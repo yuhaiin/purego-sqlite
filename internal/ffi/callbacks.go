@@ -9,14 +9,19 @@ import (
 // CallbackHandlers belong to one SQLite registration. Native code retains an
 // integer token only. Destruction runs after SQLite has stopped using it.
 type CallbackHandlers struct {
-	Scalar  func(uintptr, int32, uintptr)
-	Step    func(uintptr, int32, uintptr)
-	Final   func(uintptr)
-	Compare func(int32, uintptr, int32, uintptr) int32
-	Destroy func()
+	Scalar    func(uintptr, int32, uintptr)
+	Step      func(uintptr, int32, uintptr)
+	Final     func(uintptr)
+	Compare   func(int32, uintptr, int32, uintptr) int32
+	Destroy   func()
+	Update    func(int32, uintptr, uintptr, int64)
+	Commit    func() int32
+	Rollback  func()
+	Authorize func(int32, uintptr, uintptr, uintptr, uintptr) int32
+	Trace     func(uint32, uintptr, uintptr)
 }
 
-type CallbackPointers struct{ Scalar, Step, Final, Compare, Destroy uintptr }
+type CallbackPointers struct{ Scalar, Step, Final, Compare, Destroy, Update, Commit, Rollback, Authorize, Trace uintptr }
 
 var callbackRegistry = struct {
 	sync.RWMutex
@@ -82,3 +87,16 @@ func (a *API) Callbacks() (CallbackPointers, error) {
 
 // NativePointer decodes an address returned by SQLite, never a Go allocation.
 func NativePointer(address uintptr) *byte { return *(**byte)(unsafe.Pointer(&address)) }
+
+// NativeString copies a NUL-terminated string owned by SQLite.
+func NativeString(address uintptr) string {
+	if address == 0 {
+		return ""
+	}
+	p := NativePointer(address)
+	n := 0
+	for *(*byte)(unsafe.Add(unsafe.Pointer(p), n)) != 0 {
+		n++
+	}
+	return string(unsafe.Slice(p, n))
+}

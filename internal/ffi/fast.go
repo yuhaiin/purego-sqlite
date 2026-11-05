@@ -38,7 +38,6 @@ func bindFast(a *API, h uintptr) {
 	a.UserData = func(ctx uintptr) uintptr { result, _, _ := purego.SyscallN(userData, ctx); return result }
 	a.connection = func() *API {
 		local := *a
-		local.connection = nil
 		bindConnectionCalls(&local, symbols)
 		local.bindOperations()
 		return &local

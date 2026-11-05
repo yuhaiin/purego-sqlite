@@ -30,12 +30,13 @@ SQLite semantics.
 | `_cache_size` | Signed C int, including negative KiB budgets |
 | `_loc` | IANA time zone, UTC, Local, or `auto` for time.Local |
 | `_mutex` | `full`; disabling SQLite's mutex is unsupported |
+| `_stmt_cache_size` | 0 (default, disabled) through 1024 entries per physical connection |
 
 Booleans accept 0/1, false/true, off/on, no/yes, case-insensitively. Enumeration
 values are case-insensitive. Duplicate parameters and conflicting aliases fail
 before opening a library. Invalid values cannot become interpolated SQL.
-The obsolete `_auth*`, writable-schema and case-sensitive-like switches, and
-the not-yet-supported `_stmt_cache_size`, return `ErrUnsupported`. Unknown
+The obsolete `_auth*`, writable-schema and case-sensitive-like switches
+return `ErrUnsupported`. Unknown
 custom URI parameters pass through for VFS compatibility. `mode`, `cache`,
 `immutable` and `vfs` remain native SQLite parameters. Requested WAL must actually
 be available, including when selected by DSN; in-memory databases cannot use WAL.
@@ -115,6 +116,9 @@ native engines can supply Go callbacks in a process; ordinary SQL connections do
 not consume these slots. The selected engine's own user-data API is always used.
 
 ## Tests and benchmarks
+
+See [snapshots, backup, caching and hooks](mattn-medium.md) for the next group of
+connection APIs and their ownership and callback contracts.
 
 The normal suite includes per-connection DSN application, invalid/aliased URI
 parameters, timezones and raw/compatible values, nullable values, callback

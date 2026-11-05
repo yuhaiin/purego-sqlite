@@ -9,6 +9,10 @@ The [mattn compatibility benchmark report](mattn-high-priority.md) adds scalar
 functions, grouped Go aggregates, custom collation sorting, timestamp binding and
 typed row decoding, with raw PureGo/static CGO/dynamic CGO and mattn samples.
 
+The [medium-priority compatibility report](mattn-medium-priority.md) measures
+optional statement caching, snapshots, connection backup, hooks and tracing,
+alongside the five-implementation SQL controls.
+
 ## Implementations and controls
 
 | Implementation | Version / selection | SQLite engine |

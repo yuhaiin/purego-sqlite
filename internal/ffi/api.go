@@ -89,6 +89,19 @@ type API struct {
 	BackupInit       func(uintptr, string, uintptr, string) uintptr                                         `sqlite:"sqlite3_backup_init"`
 	BackupStep       func(uintptr, int32) int32                                                             `sqlite:"sqlite3_backup_step"`
 	BackupFinish     func(uintptr) int32                                                                    `sqlite:"sqlite3_backup_finish"`
+	BackupRemaining  func(uintptr) int32                                                                    `sqlite:"sqlite3_backup_remaining"`
+	BackupPageCount  func(uintptr) int32                                                                    `sqlite:"sqlite3_backup_pagecount"`
+	Serialize        func(uintptr, string, *int64, uint32) *byte                                            `sqlite:"sqlite3_serialize,optional"`
+	Deserialize      func(uintptr, string, *byte, int64, int64, uint32) int32                               `sqlite:"sqlite3_deserialize,optional"`
+	Malloc64         func(uint64) *byte                                                                     `sqlite:"sqlite3_malloc64"`
+	SystemErrno      func(uintptr) int32                                                                    `sqlite:"sqlite3_system_errno,optional"`
+	SourceID         func() string                                                                          `sqlite:"sqlite3_sourceid"`
+	UpdateHook       func(uintptr, uintptr, uintptr) uintptr                                                `sqlite:"sqlite3_update_hook"`
+	CommitHook       func(uintptr, uintptr, uintptr) uintptr                                                `sqlite:"sqlite3_commit_hook"`
+	RollbackHook     func(uintptr, uintptr, uintptr) uintptr                                                `sqlite:"sqlite3_rollback_hook"`
+	SetAuthorizer    func(uintptr, uintptr, uintptr) int32                                                  `sqlite:"sqlite3_set_authorizer,optional"`
+	TraceV2          func(uintptr, uint32, uintptr, uintptr) int32                                          `sqlite:"sqlite3_trace_v2,optional"`
+	ExpandedSQL      func(uintptr) *byte                                                                    `sqlite:"sqlite3_expanded_sql,optional"`
 	CreateFunction   func(uintptr, string, int32, int32, uintptr, uintptr, uintptr, uintptr, uintptr) int32 `sqlite:"sqlite3_create_function_v2"`
 	CreateCollation  func(uintptr, string, int32, uintptr, uintptr, uintptr) int32                          `sqlite:"sqlite3_create_collation_v2"`
 	UserData         func(uintptr) uintptr                                                                  `sqlite:"sqlite3_user_data"`
@@ -106,6 +119,9 @@ type API struct {
 	ResultBlob       func(uintptr, *byte, int32, uintptr)                                                   `sqlite:"sqlite3_result_blob"`
 	ResultError      func(uintptr, *byte, int32)                                                            `sqlite:"sqlite3_result_error"`
 }
+
+// SameEngine requires native object identity, not just matching SQLite versions.
+func (a *API) SameEngine(b *API) bool { return a.handle == b.handle }
 
 var libraries = struct {
 	sync.Mutex

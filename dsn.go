@@ -157,9 +157,18 @@ func parseDSN(dsn string, cfg *config) (string, error) {
 		return "", err
 	}
 	for key := range values {
-		if key == "_writable_schema" || key == "_case_sensitive_like" || key == "_cslike" || key == "_stmt_cache_size" || key == "_auth" || key == "_auth_user" || key == "_auth_pass" || key == "_auth_crypt" || key == "_auth_salt" {
+		if key == "_writable_schema" || key == "_case_sensitive_like" || key == "_cslike" || key == "_auth" || key == "_auth_user" || key == "_auth_pass" || key == "_auth_crypt" || key == "_auth_salt" {
 			return "", fmt.Errorf("%w: DSN parameter %s", ErrUnsupported, key)
 		}
+	}
+	if err := apply([]string{"_stmt_cache_size"}, func(value string) error {
+		size, err := strconv.ParseInt(value, 10, 32)
+		if err != nil {
+			return err
+		}
+		return WithStatementCache(int(size))(cfg)
+	}); err != nil {
+		return "", err
 	}
 	if !strings.HasPrefix(path, "file:") {
 		return path, nil

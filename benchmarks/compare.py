@@ -36,7 +36,7 @@ for specification in sys.argv[1:]:
         raise SystemExit(f"unknown backend label: {backend}")
     local = defaultdict(lambda: defaultdict(list))
     for line in Path(path).read_text().splitlines():
-        match = re.match(r"BenchmarkSQLite/([^/]+)/(purego|cgo|mattn|modernc)-\d+\s+\d+\s+(.*)", line)
+        match = re.match(r"Benchmark(?:SQLite|MattnParity|MattnMedium)/(.+)/(purego|cgo|mattn|modernc)-\d+\s+\d+\s+(.*)", line)
         if not match:
             continue
         name, driver, raw = match.groups()

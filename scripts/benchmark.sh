@@ -18,6 +18,9 @@ case "$bench_backend" in
   cgo-dynamic) bench_tags="libsqlite3,sqlite_dynamic"; export BENCH_SQLITE_LIBRARY="$native_dir/libsqlite3.so" ;;
   *) echo "BENCH_BACKEND must be purego, cgo or cgo-dynamic" >&2; exit 1 ;;
 esac
+# These expose mattn's Go wrappers around public native APIs. They do not
+# change the SQLite engine compiled into the shared library.
+bench_tags+=",sqlite_serialize,sqlite_trace"
 export GOMAXPROCS="${GOMAXPROCS:-4}"
 cd "$repo_dir/benchmarks"
 mkdir -p results

@@ -33,8 +33,38 @@ func newCallbackPointers(a *API) (p CallbackPointers, err error) {
 			}
 			return 0
 		})
+		commonCallbacks.pointers.Update = purego.NewCallback(func(token uintptr, op int32, db, table uintptr, rowID int64) uintptr {
+			if fn := callbackHandlers(token).Update; fn != nil {
+				fn(op, db, table, rowID)
+			}
+			return 0
+		})
+		commonCallbacks.pointers.Commit = purego.NewCallback(func(token uintptr) uintptr {
+			if fn := callbackHandlers(token).Commit; fn != nil {
+				return uintptr(fn())
+			}
+			return 0
+		})
+		commonCallbacks.pointers.Rollback = purego.NewCallback(func(token uintptr) uintptr {
+			if fn := callbackHandlers(token).Rollback; fn != nil {
+				fn()
+			}
+			return 0
+		})
+		commonCallbacks.pointers.Authorize = purego.NewCallback(func(token uintptr, op int32, a, b, db, origin uintptr) uintptr {
+			if fn := callbackHandlers(token).Authorize; fn != nil {
+				return uintptr(fn(op, a, b, db, origin))
+			}
+			return 1
+		})
+		commonCallbacks.pointers.Trace = purego.NewCallback(func(mask uint32, token, p, x uintptr) uintptr {
+			if fn := callbackHandlers(token).Trace; fn != nil {
+				fn(mask, p, x)
+			}
+			return 0
+		})
 	}
-	if commonCallbacks.pointers.Destroy == 0 || commonCallbacks.pointers.Compare == 0 {
+	if commonCallbacks.pointers.Destroy == 0 || commonCallbacks.pointers.Compare == 0 || commonCallbacks.pointers.Trace == 0 {
 		return p, fmt.Errorf("sqlite: callback entrypoints unavailable")
 	}
 	p = commonCallbacks.pointers
