@@ -81,7 +81,7 @@ func (c *Connector) Connect(ctx context.Context) (driver.Conn, error) {
 	if c.cfg.readOnly {
 		flags = 0x1 | 0x40 | 0x10000
 	}
-	conn := &Conn{api: c.api.ForConnection(), cfg: c.cfg, stmts: make(map[*stmt]struct{})}
+	conn := &Conn{id: nextConnectionID.Add(1), api: c.api.ForConnection(), cfg: c.cfg, stmts: make(map[*stmt]struct{})}
 	rc := c.api.Open(c.dsn, &conn.db, flags, 0)
 	if rc != ffi.OK {
 		err := conn.sqliteError(rc)
@@ -136,6 +136,7 @@ func (c *Connector) Connect(ctx context.Context) (driver.Conn, error) {
 			return fail(err)
 		}
 		conn.mu.Lock()
+		conn.clearStatementCacheLocked()
 		leaked := len(conn.stmts) != 0 || conn.db == 0 || c.api.Autocommit(conn.db) == 0
 		conn.mu.Unlock()
 		if leaked {

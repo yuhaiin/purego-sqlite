@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"io"
 	"math"
 	"reflect"
@@ -99,7 +100,7 @@ func (r *rows) Close() error {
 	}
 	r.s.c.mu.Lock()
 	defer r.s.c.mu.Unlock()
-	return r.closeLocked()
+	return r.s.c.takeCallbackError(r.closeLocked())
 }
 func (r *rows) closeLocked() error {
 	if r.closed {
@@ -114,7 +115,7 @@ func (r *rows) closeLocked() error {
 		return nil
 	}
 	if r.own {
-		return s.closeLocked()
+		return s.releaseLocked(r.ctx.Err() == nil && s.c.callbackErr == nil)
 	}
 	rc := s.c.api.ResetClear(s.ptr)
 	s.boundBuffers = false
@@ -223,7 +224,17 @@ func (r *rows) Next(dest []driver.Value) error {
 		return r.convertValues(dest)
 	})
 	if err != nil {
-		_ = r.closeLocked()
+		if err != io.EOF {
+			r.s.cacheKey = ""
+		}
+		closeErr := c.takeCallbackError(r.closeLocked())
+		if closeErr != nil {
+			if err == io.EOF {
+				err = closeErr
+			} else {
+				err = errors.Join(err, closeErr)
+			}
+		}
 	}
 	return err
 }

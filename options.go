@@ -10,24 +10,40 @@ import (
 )
 
 type config struct {
-	library    string
-	bundled    bool
-	busyMS     int32
-	readOnly   bool
-	wal        bool
-	txMode     string
-	extensions bool
-	init       func(context.Context, *Conn) error
-	pragmas    []string
-	journal    string
-	parseTime  bool
-	parseBool  bool
-	mattnTypes bool
-	location   *time.Location
+	library        string
+	bundled        bool
+	busyMS         int32
+	readOnly       bool
+	wal            bool
+	txMode         string
+	extensions     bool
+	init           func(context.Context, *Conn) error
+	pragmas        []string
+	journal        string
+	parseTime      bool
+	parseBool      bool
+	mattnTypes     bool
+	location       *time.Location
+	statementCache int
 }
 
 // Option configures every physical connection created by a Connector.
 type Option func(*config) error
+
+// WithStatementCache enables a per-connection LRU for single-statement Exec and
+// Query calls. Zero disables it (the default); the maximum is 1024 entries.
+// Explicitly prepared statements have independent lifetimes. SQL longer than
+// 4096 bytes and statements other than SELECT/WITH/INSERT/UPDATE/DELETE/REPLACE
+// are not retained. Bindings are cleared before a statement enters the cache.
+func WithStatementCache(size int) Option {
+	return func(c *config) error {
+		if size < 0 || size > 1024 {
+			return errors.New("sqlite: statement cache size must be between 0 and 1024")
+		}
+		c.statementCache = size
+		return nil
+	}
+}
 
 // WithLibrary selects an explicitly trusted absolute native library path.
 func WithLibrary(path string) Option {

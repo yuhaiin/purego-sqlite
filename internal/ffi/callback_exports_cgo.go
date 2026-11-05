@@ -38,3 +38,40 @@ func goSQLiteCompare(token C.uintptr_t, n1 C.int, p1 C.uintptr_t, n2 C.int, p2 C
 
 //export goSQLiteDestroy
 func goSQLiteDestroy(token C.uintptr_t) { ReleaseCallbackToken(uintptr(token)) }
+
+//export goSQLiteUpdate
+func goSQLiteUpdate(token C.uintptr_t, op C.int, db, table C.uintptr_t, rowID C.int64_t) {
+	if fn := callbackHandlers(uintptr(token)).Update; fn != nil {
+		fn(int32(op), uintptr(db), uintptr(table), int64(rowID))
+	}
+}
+
+//export goSQLiteCommit
+func goSQLiteCommit(token C.uintptr_t) C.int {
+	if fn := callbackHandlers(uintptr(token)).Commit; fn != nil {
+		return C.int(fn())
+	}
+	return 0
+}
+
+//export goSQLiteRollback
+func goSQLiteRollback(token C.uintptr_t) {
+	if fn := callbackHandlers(uintptr(token)).Rollback; fn != nil {
+		fn()
+	}
+}
+
+//export goSQLiteAuthorize
+func goSQLiteAuthorize(token C.uintptr_t, op C.int, a, b, db, origin C.uintptr_t) C.int {
+	if fn := callbackHandlers(uintptr(token)).Authorize; fn != nil {
+		return C.int(fn(int32(op), uintptr(a), uintptr(b), uintptr(db), uintptr(origin)))
+	}
+	return 1
+}
+
+//export goSQLiteTrace
+func goSQLiteTrace(mask C.uint, token, p, x C.uintptr_t) {
+	if fn := callbackHandlers(uintptr(token)).Trace; fn != nil {
+		fn(uint32(mask), uintptr(p), uintptr(x))
+	}
+}

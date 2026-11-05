@@ -20,6 +20,11 @@ typedef void (*sqlite_scalar_callback)(sqlite3_context*,int,sqlite3_value**);
 typedef void (*sqlite_final_callback)(sqlite3_context*);
 typedef void (*sqlite_destroy_callback)(void*);
 typedef int (*sqlite_compare_callback)(void*,int,const void*,int,const void*);
+typedef unsigned long long sqlite3_uint64;
+typedef void (*sqlite_update_callback)(void*,int,const char*,const char*,sqlite3_int64);
+typedef int (*sqlite_commit_callback)(void*);
+typedef int (*sqlite_authorizer_callback)(void*,int,const char*,const char*,const char*,const char*);
+typedef int (*sqlite_trace_callback)(unsigned int,void*,void*,void*);
 static int call_sqlite3_open_v2(uintptr_t fn, const char* p0, uintptr_t* p1, int p2, uintptr_t p3) {
 sqlite3 *db = NULL;
 int result = ((int (*)(const char*,sqlite3**,int,const char*))fn)((const char*)p0, &db, (int)p2, (const char*)p3);
@@ -183,6 +188,45 @@ return (int)((int (*)(sqlite3_backup*,int))fn)((sqlite3_backup*)p0, (int)p1);
 }
 static int call_sqlite3_backup_finish(uintptr_t fn, uintptr_t p0) {
 return (int)((int (*)(sqlite3_backup*))fn)((sqlite3_backup*)p0);
+}
+static int call_sqlite3_backup_remaining(uintptr_t fn, uintptr_t p0) {
+return (int)((int (*)(sqlite3_backup*))fn)((sqlite3_backup*)p0);
+}
+static int call_sqlite3_backup_pagecount(uintptr_t fn, uintptr_t p0) {
+return (int)((int (*)(sqlite3_backup*))fn)((sqlite3_backup*)p0);
+}
+static void* call_sqlite3_serialize(uintptr_t fn, uintptr_t p0, const char* p1, sqlite3_int64* p2, unsigned int p3) {
+return (void*)((unsigned char* (*)(sqlite3*,const char*,sqlite3_int64*,unsigned int))fn)((sqlite3*)p0, (const char*)p1, (sqlite3_int64*)p2, (unsigned int)p3);
+}
+static int call_sqlite3_deserialize(uintptr_t fn, uintptr_t p0, const char* p1, void* p2, sqlite3_int64 p3, sqlite3_int64 p4, unsigned int p5) {
+return (int)((int (*)(sqlite3*,const char*,unsigned char*,sqlite3_int64,sqlite3_int64,unsigned int))fn)((sqlite3*)p0, (const char*)p1, (unsigned char*)p2, (sqlite3_int64)p3, (sqlite3_int64)p4, (unsigned int)p5);
+}
+static void* call_sqlite3_malloc64(uintptr_t fn, sqlite3_uint64 p0) {
+return (void*)((void* (*)(sqlite3_uint64))fn)((sqlite3_uint64)p0);
+}
+static int call_sqlite3_system_errno(uintptr_t fn, uintptr_t p0) {
+return (int)((int (*)(sqlite3*))fn)((sqlite3*)p0);
+}
+static const char* call_sqlite3_sourceid(uintptr_t fn) {
+return (const char*)((const char* (*)(void))fn)();
+}
+static uintptr_t call_sqlite3_update_hook(uintptr_t fn, uintptr_t p0, uintptr_t p1, uintptr_t p2) {
+return (uintptr_t)((void* (*)(sqlite3*,sqlite_update_callback,void*))fn)((sqlite3*)p0, (sqlite_update_callback)p1, (void*)p2);
+}
+static uintptr_t call_sqlite3_commit_hook(uintptr_t fn, uintptr_t p0, uintptr_t p1, uintptr_t p2) {
+return (uintptr_t)((void* (*)(sqlite3*,sqlite_commit_callback,void*))fn)((sqlite3*)p0, (sqlite_commit_callback)p1, (void*)p2);
+}
+static uintptr_t call_sqlite3_rollback_hook(uintptr_t fn, uintptr_t p0, uintptr_t p1, uintptr_t p2) {
+return (uintptr_t)((void* (*)(sqlite3*,sqlite_destroy_callback,void*))fn)((sqlite3*)p0, (sqlite_destroy_callback)p1, (void*)p2);
+}
+static int call_sqlite3_set_authorizer(uintptr_t fn, uintptr_t p0, uintptr_t p1, uintptr_t p2) {
+return (int)((int (*)(sqlite3*,sqlite_authorizer_callback,void*))fn)((sqlite3*)p0, (sqlite_authorizer_callback)p1, (void*)p2);
+}
+static int call_sqlite3_trace_v2(uintptr_t fn, uintptr_t p0, unsigned int p1, uintptr_t p2, uintptr_t p3) {
+return (int)((int (*)(sqlite3*,unsigned int,sqlite_trace_callback,void*))fn)((sqlite3*)p0, (unsigned int)p1, (sqlite_trace_callback)p2, (void*)p3);
+}
+static void* call_sqlite3_expanded_sql(uintptr_t fn, uintptr_t p0) {
+return (void*)((char* (*)(sqlite3_stmt*))fn)((sqlite3_stmt*)p0);
 }
 static int call_sqlite3_create_function_v2(uintptr_t fn, uintptr_t p0, const char* p1, int p2, int p3, uintptr_t p4, uintptr_t p5, uintptr_t p6, uintptr_t p7, uintptr_t p8) {
 return (int)((int (*)(sqlite3*,const char*,int,int,void*,sqlite_scalar_callback,sqlite_scalar_callback,sqlite_final_callback,sqlite_destroy_callback))fn)((sqlite3*)p0, (const char*)p1, (int)p2, (int)p3, (void*)p4, (sqlite_scalar_callback)p5, (sqlite_scalar_callback)p6, (sqlite_final_callback)p7, (sqlite_destroy_callback)p8);
@@ -525,6 +569,75 @@ func registerAPI(a *API, _ any, name string, symbol uintptr) {
 		a.BackupFinish = func(p0 uintptr) int32 {
 			r := C.call_sqlite3_backup_finish(C.uintptr_t(symbol), C.uintptr_t(p0))
 			return int32(r)
+		}
+	case "sqlite3_backup_remaining":
+		a.BackupRemaining = func(p0 uintptr) int32 {
+			r := C.call_sqlite3_backup_remaining(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return int32(r)
+		}
+	case "sqlite3_backup_pagecount":
+		a.BackupPageCount = func(p0 uintptr) int32 {
+			r := C.call_sqlite3_backup_pagecount(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return int32(r)
+		}
+	case "sqlite3_serialize":
+		a.Serialize = func(p0 uintptr, p1 string, p2 *int64, p3 uint32) *byte {
+			cp1 := C.CString(p1)
+			defer C.free(unsafe.Pointer(cp1))
+			r := C.call_sqlite3_serialize(C.uintptr_t(symbol), C.uintptr_t(p0), cp1, (*C.sqlite3_int64)(unsafe.Pointer(p2)), C.uint(p3))
+			return (*byte)(unsafe.Pointer(r))
+		}
+	case "sqlite3_deserialize":
+		a.Deserialize = func(p0 uintptr, p1 string, p2 *byte, p3 int64, p4 int64, p5 uint32) int32 {
+			cp1 := C.CString(p1)
+			defer C.free(unsafe.Pointer(cp1))
+			r := C.call_sqlite3_deserialize(C.uintptr_t(symbol), C.uintptr_t(p0), cp1, unsafe.Pointer(p2), C.sqlite3_int64(p3), C.sqlite3_int64(p4), C.uint(p5))
+			return int32(r)
+		}
+	case "sqlite3_malloc64":
+		a.Malloc64 = func(p0 uint64) *byte {
+			r := C.call_sqlite3_malloc64(C.uintptr_t(symbol), C.sqlite3_uint64(p0))
+			return (*byte)(unsafe.Pointer(r))
+		}
+	case "sqlite3_system_errno":
+		a.SystemErrno = func(p0 uintptr) int32 {
+			r := C.call_sqlite3_system_errno(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return int32(r)
+		}
+	case "sqlite3_sourceid":
+		a.SourceID = func() string {
+			r := C.call_sqlite3_sourceid(C.uintptr_t(symbol))
+			return C.GoString(r)
+		}
+	case "sqlite3_update_hook":
+		a.UpdateHook = func(p0 uintptr, p1 uintptr, p2 uintptr) uintptr {
+			r := C.call_sqlite3_update_hook(C.uintptr_t(symbol), C.uintptr_t(p0), C.uintptr_t(p1), C.uintptr_t(p2))
+			return uintptr(r)
+		}
+	case "sqlite3_commit_hook":
+		a.CommitHook = func(p0 uintptr, p1 uintptr, p2 uintptr) uintptr {
+			r := C.call_sqlite3_commit_hook(C.uintptr_t(symbol), C.uintptr_t(p0), C.uintptr_t(p1), C.uintptr_t(p2))
+			return uintptr(r)
+		}
+	case "sqlite3_rollback_hook":
+		a.RollbackHook = func(p0 uintptr, p1 uintptr, p2 uintptr) uintptr {
+			r := C.call_sqlite3_rollback_hook(C.uintptr_t(symbol), C.uintptr_t(p0), C.uintptr_t(p1), C.uintptr_t(p2))
+			return uintptr(r)
+		}
+	case "sqlite3_set_authorizer":
+		a.SetAuthorizer = func(p0 uintptr, p1 uintptr, p2 uintptr) int32 {
+			r := C.call_sqlite3_set_authorizer(C.uintptr_t(symbol), C.uintptr_t(p0), C.uintptr_t(p1), C.uintptr_t(p2))
+			return int32(r)
+		}
+	case "sqlite3_trace_v2":
+		a.TraceV2 = func(p0 uintptr, p1 uint32, p2 uintptr, p3 uintptr) int32 {
+			r := C.call_sqlite3_trace_v2(C.uintptr_t(symbol), C.uintptr_t(p0), C.uint(p1), C.uintptr_t(p2), C.uintptr_t(p3))
+			return int32(r)
+		}
+	case "sqlite3_expanded_sql":
+		a.ExpandedSQL = func(p0 uintptr) *byte {
+			r := C.call_sqlite3_expanded_sql(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return (*byte)(unsafe.Pointer(r))
 		}
 	case "sqlite3_create_function_v2":
 		a.CreateFunction = func(p0 uintptr, p1 string, p2 int32, p3 int32, p4 uintptr, p5 uintptr, p6 uintptr, p7 uintptr, p8 uintptr) int32 {
