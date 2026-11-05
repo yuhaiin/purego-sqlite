@@ -74,8 +74,3 @@ The script enables mattn's `sqlite_serialize` and `sqlite_trace` Go wrappers;
 these flags do not rebuild or change the shared SQLite engine. Source/options,
 connection settings, compatible type semantics and snapshot round trips are
 checked before measurement.
-
-Historical implementation-stage samples: [PureGo](results/mattn-medium-purego.txt),
-[dynamic CGO](results/mattn-medium-cgo-dynamic.txt), and
-[static CGO](results/mattn-medium-cgo.txt). Their older host, sample counts and local
-bridge build differ from this report.

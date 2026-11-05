@@ -57,8 +57,3 @@ Build the stock native library first with `go run ./internal/cmd/build-native`.
 Prepare the embed directory and matching header as described in the main README.
 The benchmark wrapper verifies source/options, per-connection settings and
 compatible type behavior before measuring.
-
-Historical implementation-stage samples: [PureGo](results/mattn-high-purego.txt),
-[dynamic CGO](results/mattn-high-cgo-dynamic.txt), and
-[static CGO](results/mattn-high-cgo.txt). Their older host, sample counts and local
-bridge build differ from this report.

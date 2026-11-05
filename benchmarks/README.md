@@ -158,12 +158,10 @@ not a before/after measure of driver improvements. Ratios use this run's control
 - Throughput counts benchmark units per second: one whole batch/transaction or
   scan in those workloads, and one SQL operation in the other workloads.
 
-Earlier local diagnostic runs were affected by recurring video-transcoding
-load and are excluded from this table. The formal measurements use one hosted
-runner and matching controls. This does not guarantee exclusive physical-host
-resources: small differences and cross-configuration absolute rankings remain
-exploratory. The benchmark wrapper retains Go's default CGO optimization flags
-(`-O2 -g`); older experiments that overrode those defaults are historical.
+The formal measurements use one hosted runner and matching controls. This does
+not guarantee exclusive physical-host resources: small differences and
+cross-configuration absolute rankings remain exploratory. The benchmark wrapper
+retains Go's default CGO optimization flags (`-O2 -g`).
 
 ## Results
 
@@ -351,13 +349,6 @@ connection owns reusable SQLite-allocated scratch, 24 bytes per cached column
 plus allocator overhead, freed on Close. It is excluded from Go heap counters.
 This is not a zero-copy payload API.
 
-An initial [variadic-frame probe](results/2026-11-04-row-bridge-matched-purego.txt)
-added about 1000 Go allocations per scan. A [Go-buffer pinning probe](results/2026-11-04-row-bridge-pinned-buffer-purego.txt)
-removed these but increased time, and was rejected. The final implementation
-uses native scratch with a private scalar frame per connection. A preliminary
-[full GCC-fixture run](results/2026-11-04-row-bridge-fixture-purego-linux-amd64.txt)
-is retained separately and excluded from the combined report.
-
 To reproduce the controlled comparison:
 
 ```sh
@@ -419,9 +410,6 @@ statement reuse. A failed helper never falls through to another execution.
 
 ## Standard-API optimization and remaining overhead
 
-[Targeted before/after probes and rejected experiments](results/2026-11-04-optimization-probes.md)
-record the intermediate measurements; they are excluded from the final table.
-
 The standard columns above use **standard public SQLite symbols**. They work with system
 SQLite; no custom exports, patched `.so`, SQLite private layouts or additional
 native helper library are required. The system library at `/usr/lib/libsqlite3.so.0`
@@ -465,20 +453,15 @@ NULL declaration types, automatic schema reprepare, preserved SQL after scratch
 reuse, positional/named mode changes, partial rebinds, constraint failures,
 RETURNING/SELECT draining, late errors, cancellation and concurrent connections.
 
-The archived pre-optimization scan used **19,348 Go allocations per 1000 rows**.
-The current SQL table uses **7,304**, compared with mattn's 7,308 and modernc's
-7,305. Ordinary single-row SELECT uses 24 allocations in this run,
-versus 74 in the archived implementation. Lower
-allocation counts do not guarantee timing parity.
+The current SQL table uses **7,304 Go allocations per 1000 rows**, compared
+with mattn's 7,308 and modernc's 7,305. Ordinary single-row SELECT uses 24
+allocations in this run. Allocation counts alone do not establish timing parity.
 
 Without the optional bridge, the three-column scan needs about **eight native calls per row**: step,
-three type reads, two integer reads, TEXT pointer and TEXT length. Earlier profiling
-attributed about 66% of CPU samples to the `SyscallN` call stack, including
-native execution; this must not all be interpreted as boundary overhead. The
-remaining transition/marshalling cost matters when engine work per call is small.
-An experiment removing one Go call-frame closure showed no convincing scan
-improvement and was not retained. No correctness checks, native data copies or
-connection lifetime synchronization were removed to improve the numbers.
+three type reads, two integer reads, TEXT pointer and TEXT length. Transition
+and marshalling costs matter when the engine does little work per native call.
+The driver retains storage-class checks, owned data copies and connection
+lifetime synchronization.
 
 The 1000-row VALUES case and the original 1000-execution case deliberately remain
 separate. They illustrate different SQL shapes, including parse/binding costs;
@@ -486,40 +469,8 @@ the driver does not rewrite statements or silently batch operations. The results
 support workload-specific comparisons, not an assumption that a native engine
 must win every `database/sql` workload.
 
-## Historical measurements
+## Results retention
 
-These files record earlier implementations and are retained for comparison;
-they are not the current result table:
-
-- [November 4 scalar-executor comparison](results/2026-11-04-scalar-exec-combined-linux-amd64.md)
-  and [environment](results/2026-11-04-scalar-exec-environment.json), measured
-  before the compatibility APIs on an EPYC 7763 runner.
-
-- [Earlier combined Ryzen results](results/2026-11-04-combined-linux-amd64.md)
-  and [environment](results/2026-11-04-combined-environment.json), before the scalar executor.
-
-- [2026-11-04 pre-optimization CGO](results/2026-11-04-cgo-linux-amd64.md)
-  and [raw samples](results/2026-11-04-cgo-linux-amd64.txt).
-- [2026-11-04 pre-optimization PureGo](results/2026-11-04-purego-linux-amd64.md)
-  and [raw samples](results/2026-11-04-purego-linux-amd64.txt).
-- [2026-11-03 PureGo](results/2026-11-03-linux-amd64.md),
-  [raw samples](results/2026-11-03-linux-amd64.txt), and
-  [native manifest](results/2026-11-03-native-manifest.json).
-- The first integer FFI experiment used GOMAXPROCS=12:
-  [before](results/2026-11-03-before-fast-ffi.txt) and
-  [after](results/2026-11-03-after-fast-ffi.txt). Its concurrency timings are not
-  directly comparable to GOMAXPROCS=4 runs.
-
-The first five-way iteration, before the additional metadata/cleanup work, is
-also retained as raw logs:
-[PureGo](results/2026-11-04-optimized-purego-linux-amd64.txt),
-[dynamic CGO](results/2026-11-04-optimized-cgo-dynamic-linux-amd64.txt),
-[static CGO](results/2026-11-04-optimized-cgo-linux-amd64.txt), and the
-[earlier noisy PureGo experiment](results/2026-11-04-exploratory-purego-linux-amd64.txt).
-Those runs contain the original 17 workloads.
-
-The unpinned 18-workload investigation before restoring default CGO CFLAGS is
-retained separately:
-[PureGo](results/2026-11-04-final-purego-linux-amd64.txt),
-[dynamic CGO](results/2026-11-04-final-cgo-dynamic-linux-amd64.txt), and
-[static CGO](results/2026-11-04-final-cgo-linux-amd64.txt).
+`results/` retains the current published reports, their raw samples, the
+same-library A/B log and the environment manifest. Superseded runs and
+intermediate experiments remain available in Git history.
