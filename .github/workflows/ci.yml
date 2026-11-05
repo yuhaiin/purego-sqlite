@@ -18,6 +18,8 @@ jobs:
         with:
           go-version: '1.27.3'
       - run: test -z "$(gofmt -l .)"
+      - name: Verify benchmark report baselines
+        run: python3 -m unittest discover -s benchmarks -p 'test_compare.py'
       - run: go vet ./...
         env:
           CGO_ENABLED: '0'

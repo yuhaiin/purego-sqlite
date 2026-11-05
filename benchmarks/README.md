@@ -125,10 +125,10 @@ not a before/after measure of driver improvements. Ratios use this run's control
 - Each backend run has five sequential 300ms samples per implementation and
   workload. Runs execute sequentially on the same CPU set. Our backend columns each
   contain five samples; the mattn and modernc controls pool all **25 samples**
-  across the five executables. Each native backend ratio uses its own five matching
-  mattn controls; modernc uses the pooled controls. The report also lists all
-  matching control medians so the ratios can be checked directly. A separate
-  table also compares each native backend with its matching modernc controls.
+  across the five executables. Every main-table ratio uses the displayed pooled
+  mattn median as its denominator. Separate matching-run tables compare each
+  native backend with its own five mattn and modernc controls, showing both the
+  ratio and the actual denominator in every cell.
 - All runs use `/dev/shm` (**tmpfs**). Results
   emphasize driver/CPU overhead; they do not measure physical-disk durability.
   Set `TMPDIR` to your deployment filesystem to measure its storage behavior.
@@ -183,15 +183,28 @@ and **597,124ns embed**.
 The [generated combined report](results/2026-11-05-current-combined-linux-amd64.md) is reproduced
 below: all 18 workloads, seven configuration/control columns, time, Go memory and
 throughput. mattn/modernc display columns pool **25 samples** per workload. Every
-native ratio uses its own run's five matching controls; matching control medians
-are included. The [complete 35-workload report](results/2026-11-05-current-all-workloads-linux-amd64.md)
+main-table ratio uses the mattn median displayed in the same row. Separate
+matching-run tables include their own control medians. The [complete 35-workload report](results/2026-11-05-current-all-workloads-linux-amd64.md)
 also contains all compatibility cases from the same raw logs. Compiler and
 engine differences remain in the full comparison.
 
+Ratios describe elapsed time: `time ratio = implementation ns/op / reference ns/op`.
+The elapsed-time change is `(ratio - 1) * 100%`; throughput speedup is `1 / ratio`.
+Thus `1.20x` means 20% more time, while `0.80x` means 20% less time and 1.25x
+throughput. Ratios are computed before rounding.
+
+For `LargeTextWrite`, the displayed mattn median is 88,619ns: PureGo standard
+90,189ns / 88,619ns = **1.02x** (1.77% more time), and PureGo embed
+91,380ns / 88,619ns = **1.03x** (3.12% more time). The standard run's own mattn
+samples were 90,481, 88,800, 487,889, 518,491 and 188,974ns, giving a median of
+188,974ns and a paired ratio of **0.48x**. Those slow control samples are retained;
+that paired ratio is sensitive to run variability and does not establish a
+52% driver improvement. The matching-run table explicitly shows its denominator.
+
 <!-- BEGIN GENERATED COMBINED RESULTS -->
 
-Medians of repeated samples. Time ratio = implementation / matching-run mattn (lower is better).
-mattn and modernc columns pool controls across runs; each native backend's ratio uses its own run's mattn median.
+Medians of repeated samples. Main-table time ratio = implementation / displayed mattn median (lower is better).
+mattn and modernc columns pool controls across runs; separate matching-run tables show paired ratios and their denominators.
 
 - PureGo standard: 5 samples per workload
 - PureGo embed: 5 samples per workload
@@ -201,28 +214,28 @@ mattn and modernc columns pool controls across runs; each native backend's ratio
 - mattn: 25 samples per workload
 - modernc.org/sqlite: 25 samples per workload
 
-### Time: ns/op (ratio to matching-run mattn)
+### Time: ns/op (ratio to displayed mattn)
 
 | Workload | PureGo standard | PureGo embed | CGO dynamic standard | CGO dynamic embed | CGO static | mattn | modernc.org/sqlite |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| OpenClose | 79,753 (1.01x) | 82,143 (1.00x) | 70,563 (0.86x) | 73,371 (0.90x) | 68,887 (0.86x) | 80,621 | 125,354 (1.55x) |
-| SelectConstant | 2,652 (1.09x) | 2,522 (1.08x) | 2,243 (0.92x) | 2,165 (0.92x) | 2,173 (0.92x) | 2,370 | 2,500 (1.05x) |
-| SingleInsert | 11,523 (1.04x) | 11,185 (1.02x) | 11,042 (0.99x) | 10,932 (0.99x) | 10,890 (0.98x) | 11,080 | 14,091 (1.27x) |
-| PreparedInsert | 9,874 (1.06x) | 9,591 (1.03x) | 9,388 (1.02x) | 9,373 (1.01x) | 9,322 (1.01x) | 9,280 | 12,085 (1.30x) |
-| BatchInsert1000 | 967,138 (1.41x) | 712,355 (1.04x) | 640,406 (0.95x) | 630,679 (0.90x) | 651,612 (0.97x) | 683,390 | 945,045 (1.38x) |
-| BatchInsert1000Values | 296,404 (1.23x) | 214,334 (0.89x) | 244,823 (1.02x) | 214,319 (0.91x) | 244,622 (1.01x) | 241,579 | 410,514 (1.70x) |
-| TransactionInsert100000 | 94,712,238 (1.43x) | 68,821,052 (1.02x) | 61,771,654 (0.95x) | 61,288,382 (0.90x) | 62,115,014 (0.97x) | 66,182,226 | 95,049,711 (1.44x) |
-| SingleRowSelect | 7,041 (1.07x) | 6,685 (1.03x) | 6,631 (0.97x) | 6,180 (0.95x) | 6,448 (0.96x) | 6,560 | 8,391 (1.28x) |
-| FullScan1000 | 1,004,743 (2.05x) | 597,124 (1.22x) | 610,874 (1.25x) | 512,133 (1.04x) | 612,684 (1.35x) | 489,380 | 465,437 (0.95x) |
-| IndexedLookup | 6,862 (1.05x) | 6,802 (1.05x) | 6,537 (0.97x) | 6,337 (0.97x) | 6,514 (0.98x) | 6,557 | 8,607 (1.31x) |
-| LargeTextRead | 193,265 (1.08x) | 155,403 (0.99x) | 185,676 (1.09x) | 219,526 (1.05x) | 230,467 (1.04x) | 181,408 | 194,340 (1.07x) |
-| LargeTextWrite | 90,189 (0.48x) | 91,380 (1.02x) | 88,545 (1.00x) | 88,808 (1.02x) | 88,611 (1.00x) | 88,619 | 103,457 (1.17x) |
-| LargeBlobRead | 392,937 (1.05x) | 509,115 (1.09x) | 429,488 (1.18x) | 473,831 (1.08x) | 451,190 (1.04x) | 420,232 | 473,127 (1.13x) |
-| LargeBlobWrite | 98,177 (1.10x) | 88,776 (1.02x) | 90,144 (1.02x) | 89,621 (1.00x) | 91,002 (1.02x) | 88,941 | 103,707 (1.17x) |
-| WALReaders | 3,276 (1.00x) | 3,221 (0.99x) | 3,137 (0.95x) | 3,111 (0.93x) | 3,210 (0.97x) | 3,301 | 3,619 (1.10x) |
-| WALWriterContention | 13,193 (1.10x) | 13,287 (1.15x) | 12,833 (1.12x) | 12,046 (1.03x) | 12,324 (1.06x) | 11,752 | 18,194 (1.55x) |
-| FTS5Search | 39,368 (0.99x) | 43,812 (1.02x) | 38,971 (0.99x) | 42,721 (0.98x) | 38,399 (1.00x) | 40,545 | 71,678 (1.77x) |
-| JSONQuery | 4,053 (1.10x) | 3,806 (1.08x) | 3,440 (0.97x) | 3,414 (0.96x) | 3,389 (0.96x) | 3,549 | 4,653 (1.31x) |
+| OpenClose | 79,753 (0.99x) | 82,143 (1.02x) | 70,563 (0.88x) | 73,371 (0.91x) | 68,887 (0.85x) | 80,621 | 125,354 (1.55x) |
+| SelectConstant | 2,652 (1.12x) | 2,522 (1.06x) | 2,243 (0.95x) | 2,165 (0.91x) | 2,173 (0.92x) | 2,370 | 2,500 (1.05x) |
+| SingleInsert | 11,523 (1.04x) | 11,185 (1.01x) | 11,042 (1.00x) | 10,932 (0.99x) | 10,890 (0.98x) | 11,080 | 14,091 (1.27x) |
+| PreparedInsert | 9,874 (1.06x) | 9,591 (1.03x) | 9,388 (1.01x) | 9,373 (1.01x) | 9,322 (1.00x) | 9,280 | 12,085 (1.30x) |
+| BatchInsert1000 | 967,138 (1.42x) | 712,355 (1.04x) | 640,406 (0.94x) | 630,679 (0.92x) | 651,612 (0.95x) | 683,390 | 945,045 (1.38x) |
+| BatchInsert1000Values | 296,404 (1.23x) | 214,334 (0.89x) | 244,823 (1.01x) | 214,319 (0.89x) | 244,622 (1.01x) | 241,579 | 410,514 (1.70x) |
+| TransactionInsert100000 | 94,712,238 (1.43x) | 68,821,052 (1.04x) | 61,771,654 (0.93x) | 61,288,382 (0.93x) | 62,115,014 (0.94x) | 66,182,226 | 95,049,711 (1.44x) |
+| SingleRowSelect | 7,041 (1.07x) | 6,685 (1.02x) | 6,631 (1.01x) | 6,180 (0.94x) | 6,448 (0.98x) | 6,560 | 8,391 (1.28x) |
+| FullScan1000 | 1,004,743 (2.05x) | 597,124 (1.22x) | 610,874 (1.25x) | 512,133 (1.05x) | 612,684 (1.25x) | 489,380 | 465,437 (0.95x) |
+| IndexedLookup | 6,862 (1.05x) | 6,802 (1.04x) | 6,537 (1.00x) | 6,337 (0.97x) | 6,514 (0.99x) | 6,557 | 8,607 (1.31x) |
+| LargeTextRead | 193,265 (1.07x) | 155,403 (0.86x) | 185,676 (1.02x) | 219,526 (1.21x) | 230,467 (1.27x) | 181,408 | 194,340 (1.07x) |
+| LargeTextWrite | 90,189 (1.02x) | 91,380 (1.03x) | 88,545 (1.00x) | 88,808 (1.00x) | 88,611 (1.00x) | 88,619 | 103,457 (1.17x) |
+| LargeBlobRead | 392,937 (0.94x) | 509,115 (1.21x) | 429,488 (1.02x) | 473,831 (1.13x) | 451,190 (1.07x) | 420,232 | 473,127 (1.13x) |
+| LargeBlobWrite | 98,177 (1.10x) | 88,776 (1.00x) | 90,144 (1.01x) | 89,621 (1.01x) | 91,002 (1.02x) | 88,941 | 103,707 (1.17x) |
+| WALReaders | 3,276 (0.99x) | 3,221 (0.98x) | 3,137 (0.95x) | 3,111 (0.94x) | 3,210 (0.97x) | 3,301 | 3,619 (1.10x) |
+| WALWriterContention | 13,193 (1.12x) | 13,287 (1.13x) | 12,833 (1.09x) | 12,046 (1.03x) | 12,324 (1.05x) | 11,752 | 18,194 (1.55x) |
+| FTS5Search | 39,368 (0.97x) | 43,812 (1.08x) | 38,971 (0.96x) | 42,721 (1.05x) | 38,399 (0.95x) | 40,545 | 71,678 (1.77x) |
+| JSONQuery | 4,053 (1.14x) | 3,806 (1.07x) | 3,440 (0.97x) | 3,414 (0.96x) | 3,389 (0.95x) | 3,549 | 4,653 (1.31x) |
 
 ### Go memory: B/op / allocs/op
 
@@ -295,30 +308,30 @@ Each cell shows the time ratio and matching modernc median in ns/op; lower ratio
 | FTS5Search | 0.55x (71,606) | 0.61x (71,729) | 0.55x (70,454) | 0.57x (74,609) | 0.53x (71,841) |
 | JSONQuery | 0.85x (4,762) | 0.81x (4,687) | 0.75x (4,575) | 0.73x (4,653) | 0.73x (4,638) |
 
-### Matching mattn controls: ns/op
+### Native time / matching-run mattn
 
-These medians are the denominators for the native backend ratios above.
+Each cell shows the time ratio and matching mattn median in ns/op; these denominators can differ from the main table's pooled median.
 
-| Workload | PureGo standard run | PureGo embed run | CGO dynamic standard run | CGO dynamic embed run | CGO static run |
+| Workload | PureGo standard | PureGo embed | CGO dynamic standard | CGO dynamic embed | CGO static |
 |---|---:|---:|---:|---:|---:|
-| OpenClose | 79,163 | 82,214 | 81,731 | 81,445 | 80,377 |
-| SelectConstant | 2,426 | 2,346 | 2,438 | 2,347 | 2,369 |
-| SingleInsert | 11,099 | 10,970 | 11,189 | 11,080 | 11,058 |
-| PreparedInsert | 9,277 | 9,352 | 9,232 | 9,284 | 9,223 |
-| BatchInsert1000 | 687,215 | 683,390 | 674,157 | 701,361 | 669,220 |
-| BatchInsert1000Values | 241,579 | 241,704 | 240,419 | 236,597 | 243,336 |
-| TransactionInsert100000 | 66,182,226 | 67,399,237 | 65,321,080 | 68,217,387 | 64,278,950 |
-| SingleRowSelect | 6,560 | 6,510 | 6,846 | 6,479 | 6,694 |
-| FullScan1000 | 489,496 | 488,461 | 490,027 | 493,096 | 452,646 |
-| IndexedLookup | 6,557 | 6,497 | 6,772 | 6,515 | 6,622 |
-| LargeTextRead | 179,027 | 157,057 | 170,724 | 209,101 | 221,291 |
-| LargeTextWrite | 188,974 | 89,674 | 88,216 | 87,301 | 88,533 |
-| LargeBlobRead | 373,618 | 465,574 | 364,308 | 440,513 | 432,662 |
-| LargeBlobWrite | 88,979 | 87,299 | 88,346 | 89,730 | 88,941 |
-| WALReaders | 3,281 | 3,252 | 3,301 | 3,342 | 3,314 |
-| WALWriterContention | 11,990 | 11,575 | 11,491 | 11,752 | 11,644 |
-| FTS5Search | 39,702 | 42,928 | 39,286 | 43,555 | 38,517 |
-| JSONQuery | 3,671 | 3,520 | 3,557 | 3,558 | 3,534 |
+| OpenClose | 1.01x (79,163) | 1.00x (82,214) | 0.86x (81,731) | 0.90x (81,445) | 0.86x (80,377) |
+| SelectConstant | 1.09x (2,426) | 1.08x (2,346) | 0.92x (2,438) | 0.92x (2,347) | 0.92x (2,369) |
+| SingleInsert | 1.04x (11,099) | 1.02x (10,970) | 0.99x (11,189) | 0.99x (11,080) | 0.98x (11,058) |
+| PreparedInsert | 1.06x (9,277) | 1.03x (9,352) | 1.02x (9,232) | 1.01x (9,284) | 1.01x (9,223) |
+| BatchInsert1000 | 1.41x (687,215) | 1.04x (683,390) | 0.95x (674,157) | 0.90x (701,361) | 0.97x (669,220) |
+| BatchInsert1000Values | 1.23x (241,579) | 0.89x (241,704) | 1.02x (240,419) | 0.91x (236,597) | 1.01x (243,336) |
+| TransactionInsert100000 | 1.43x (66,182,226) | 1.02x (67,399,237) | 0.95x (65,321,080) | 0.90x (68,217,387) | 0.97x (64,278,950) |
+| SingleRowSelect | 1.07x (6,560) | 1.03x (6,510) | 0.97x (6,846) | 0.95x (6,479) | 0.96x (6,694) |
+| FullScan1000 | 2.05x (489,496) | 1.22x (488,461) | 1.25x (490,027) | 1.04x (493,096) | 1.35x (452,646) |
+| IndexedLookup | 1.05x (6,557) | 1.05x (6,497) | 0.97x (6,772) | 0.97x (6,515) | 0.98x (6,622) |
+| LargeTextRead | 1.08x (179,027) | 0.99x (157,057) | 1.09x (170,724) | 1.05x (209,101) | 1.04x (221,291) |
+| LargeTextWrite | 0.48x (188,974) | 1.02x (89,674) | 1.00x (88,216) | 1.02x (87,301) | 1.00x (88,533) |
+| LargeBlobRead | 1.05x (373,618) | 1.09x (465,574) | 1.18x (364,308) | 1.08x (440,513) | 1.04x (432,662) |
+| LargeBlobWrite | 1.10x (88,979) | 1.02x (87,299) | 1.02x (88,346) | 1.00x (89,730) | 1.02x (88,941) |
+| WALReaders | 1.00x (3,281) | 0.99x (3,252) | 0.95x (3,301) | 0.93x (3,342) | 0.97x (3,314) |
+| WALWriterContention | 1.10x (11,990) | 1.15x (11,575) | 1.12x (11,491) | 1.03x (11,752) | 1.06x (11,644) |
+| FTS5Search | 0.99x (39,702) | 1.02x (42,928) | 0.99x (39,286) | 0.98x (43,555) | 1.00x (38,517) |
+| JSONQuery | 1.10x (3,671) | 1.08x (3,520) | 0.97x (3,557) | 0.96x (3,558) | 0.96x (3,534) |
 
 <!-- END GENERATED COMBINED RESULTS -->
 
