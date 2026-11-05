@@ -20,11 +20,12 @@ import (
 
 var drivers = []string{backendName, "mattn", "modernc"}
 
-func open(b testing.TB, implementation, path string, connections int) *sql.DB {
+func open(b testing.TB, implementation, path string, connections int, extra ...sqlite.Option) *sql.DB {
 	b.Helper()
 	var db *sql.DB
 	if implementation == backendName {
 		var opts []sqlite.Option
+		opts = append(opts, extra...)
 		if lib := os.Getenv("BENCH_SQLITE_LIBRARY"); lib != "" {
 			opts = append(opts, sqlite.WithLibrary(lib))
 		}
@@ -72,9 +73,9 @@ func exec(b testing.TB, db *sql.DB, q string, args ...any) {
 		b.Fatal(err)
 	}
 }
-func setup(b *testing.B, implementation string, connections int) *sql.DB {
+func setup(b *testing.B, implementation string, connections int, extra ...sqlite.Option) *sql.DB {
 	b.Helper()
-	db := open(b, implementation, filepath.Join(b.TempDir(), "bench.db"), connections)
+	db := open(b, implementation, filepath.Join(b.TempDir(), "bench.db"), connections, extra...)
 	b.Cleanup(func() {
 		if err := db.Close(); err != nil {
 			b.Error(err)

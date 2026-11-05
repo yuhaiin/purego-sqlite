@@ -14,6 +14,9 @@ func (t *transaction) Commit() error   { return t.finish(true) }
 func (t *transaction) Rollback() error { return t.finish(false) }
 func (t *transaction) finish(commit bool) error {
 	c := t.c
+	if c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if t.done {

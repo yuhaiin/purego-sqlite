@@ -25,7 +25,7 @@ mkdir -p results
 if (( $# == 0 )); then
   set -- -benchtime=200ms -count=5
 fi
-bench_command=(go test -tags "$bench_tags" -run 'TestSameNativeSQLite|TestConnectionSettings' -v -bench . -benchmem -timeout 20m "$@")
+bench_command=(go test -tags "$bench_tags" -run 'TestSameNativeSQLite|TestConnectionSettings|TestMattnParity' -v -bench . -benchmem -timeout 20m "$@")
 if [[ -n "${BENCH_CPUSET:-}" ]]; then
   bench_command=(taskset -c "$BENCH_CPUSET" "${bench_command[@]}")
 fi

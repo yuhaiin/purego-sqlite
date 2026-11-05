@@ -32,6 +32,9 @@ const (
 // limits belong to the connection, not a database/sql pool or database file.
 // Categories absent from the loaded SQLite version return ErrUnsupported.
 func (c *Conn) SetLimit(category LimitCategory, value int) (int, error) {
+	if c.inCallback.Load() != 0 {
+		return 0, ErrCallbackReentry
+	}
 	if category < LimitLength {
 		return 0, fmt.Errorf("sqlite: invalid limit category %d", category)
 	}

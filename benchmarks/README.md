@@ -5,6 +5,10 @@ and modernc.org/sqlite** across all 18 workloads. Standard and embed bridge
 paths appear side by side in one combined comparison. This is a separate Go module:
 mattn and modernc remain benchmark-only dependencies.
 
+The [mattn compatibility benchmark report](mattn-high-priority.md) adds scalar
+functions, grouped Go aggregates, custom collation sorting, timestamp binding and
+typed row decoding, with raw PureGo/static CGO/dynamic CGO and mattn samples.
+
 ## Implementations and controls
 
 | Implementation | Version / selection | SQLite engine |

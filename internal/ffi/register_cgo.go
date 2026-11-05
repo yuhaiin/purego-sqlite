@@ -14,6 +14,12 @@ typedef void (*sqlite_destructor)(void*);
 _Static_assert(sizeof(int) == 4, "SQLite C int must be 32 bits");
 _Static_assert(sizeof(sqlite3_int64) == 8, "SQLite integer must be 64 bits");
 _Static_assert(sizeof(uintptr_t) == sizeof(void*), "handle width must match pointers");
+typedef struct sqlite3_context sqlite3_context;
+typedef struct sqlite3_value sqlite3_value;
+typedef void (*sqlite_scalar_callback)(sqlite3_context*,int,sqlite3_value**);
+typedef void (*sqlite_final_callback)(sqlite3_context*);
+typedef void (*sqlite_destroy_callback)(void*);
+typedef int (*sqlite_compare_callback)(void*,int,const void*,int,const void*);
 static int call_sqlite3_open_v2(uintptr_t fn, const char* p0, uintptr_t* p1, int p2, uintptr_t p3) {
 sqlite3 *db = NULL;
 int result = ((int (*)(const char*,sqlite3**,int,const char*))fn)((const char*)p0, &db, (int)p2, (const char*)p3);
@@ -177,6 +183,54 @@ return (int)((int (*)(sqlite3_backup*,int))fn)((sqlite3_backup*)p0, (int)p1);
 }
 static int call_sqlite3_backup_finish(uintptr_t fn, uintptr_t p0) {
 return (int)((int (*)(sqlite3_backup*))fn)((sqlite3_backup*)p0);
+}
+static int call_sqlite3_create_function_v2(uintptr_t fn, uintptr_t p0, const char* p1, int p2, int p3, uintptr_t p4, uintptr_t p5, uintptr_t p6, uintptr_t p7, uintptr_t p8) {
+return (int)((int (*)(sqlite3*,const char*,int,int,void*,sqlite_scalar_callback,sqlite_scalar_callback,sqlite_final_callback,sqlite_destroy_callback))fn)((sqlite3*)p0, (const char*)p1, (int)p2, (int)p3, (void*)p4, (sqlite_scalar_callback)p5, (sqlite_scalar_callback)p6, (sqlite_final_callback)p7, (sqlite_destroy_callback)p8);
+}
+static int call_sqlite3_create_collation_v2(uintptr_t fn, uintptr_t p0, const char* p1, int p2, uintptr_t p3, uintptr_t p4, uintptr_t p5) {
+return (int)((int (*)(sqlite3*,const char*,int,void*,sqlite_compare_callback,sqlite_destroy_callback))fn)((sqlite3*)p0, (const char*)p1, (int)p2, (void*)p3, (sqlite_compare_callback)p4, (sqlite_destroy_callback)p5);
+}
+static uintptr_t call_sqlite3_user_data(uintptr_t fn, uintptr_t p0) {
+return (uintptr_t)((void* (*)(sqlite3_context*))fn)((sqlite3_context*)p0);
+}
+static void* call_sqlite3_aggregate_context(uintptr_t fn, uintptr_t p0, int p1) {
+return (void*)((void* (*)(sqlite3_context*,int))fn)((sqlite3_context*)p0, (int)p1);
+}
+static int call_sqlite3_value_type(uintptr_t fn, uintptr_t p0) {
+return (int)((int (*)(sqlite3_value*))fn)((sqlite3_value*)p0);
+}
+static sqlite3_int64 call_sqlite3_value_int64(uintptr_t fn, uintptr_t p0) {
+return (sqlite3_int64)((sqlite3_int64 (*)(sqlite3_value*))fn)((sqlite3_value*)p0);
+}
+static double call_sqlite3_value_double(uintptr_t fn, uintptr_t p0) {
+return (double)((double (*)(sqlite3_value*))fn)((sqlite3_value*)p0);
+}
+static void* call_sqlite3_value_text(uintptr_t fn, uintptr_t p0) {
+return (void*)((const unsigned char* (*)(sqlite3_value*))fn)((sqlite3_value*)p0);
+}
+static void* call_sqlite3_value_blob(uintptr_t fn, uintptr_t p0) {
+return (void*)((const void* (*)(sqlite3_value*))fn)((sqlite3_value*)p0);
+}
+static int call_sqlite3_value_bytes(uintptr_t fn, uintptr_t p0) {
+return (int)((int (*)(sqlite3_value*))fn)((sqlite3_value*)p0);
+}
+static void call_sqlite3_result_null(uintptr_t fn, uintptr_t p0) {
+((void (*)(sqlite3_context*))fn)((sqlite3_context*)p0);
+}
+static void call_sqlite3_result_int64(uintptr_t fn, uintptr_t p0, sqlite3_int64 p1) {
+((void (*)(sqlite3_context*,sqlite3_int64))fn)((sqlite3_context*)p0, (sqlite3_int64)p1);
+}
+static void call_sqlite3_result_double(uintptr_t fn, uintptr_t p0, double p1) {
+((void (*)(sqlite3_context*,double))fn)((sqlite3_context*)p0, (double)p1);
+}
+static void call_sqlite3_result_text(uintptr_t fn, uintptr_t p0, void* p1, int p2, uintptr_t p3) {
+((void (*)(sqlite3_context*,const char*,int,sqlite_destructor))fn)((sqlite3_context*)p0, (const char*)p1, (int)p2, (sqlite_destructor)p3);
+}
+static void call_sqlite3_result_blob(uintptr_t fn, uintptr_t p0, void* p1, int p2, uintptr_t p3) {
+((void (*)(sqlite3_context*,const void*,int,sqlite_destructor))fn)((sqlite3_context*)p0, (const void*)p1, (int)p2, (sqlite_destructor)p3);
+}
+static void call_sqlite3_result_error(uintptr_t fn, uintptr_t p0, void* p1, int p2) {
+((void (*)(sqlite3_context*,const char*,int))fn)((sqlite3_context*)p0, (const char*)p1, (int)p2);
 }
 // Use the real C variadic ABI, including on 32-bit MIPS and Apple arm64.
 static int config_extension(uintptr_t fn, uintptr_t db, int enabled) {
@@ -471,6 +525,84 @@ func registerAPI(a *API, _ any, name string, symbol uintptr) {
 		a.BackupFinish = func(p0 uintptr) int32 {
 			r := C.call_sqlite3_backup_finish(C.uintptr_t(symbol), C.uintptr_t(p0))
 			return int32(r)
+		}
+	case "sqlite3_create_function_v2":
+		a.CreateFunction = func(p0 uintptr, p1 string, p2 int32, p3 int32, p4 uintptr, p5 uintptr, p6 uintptr, p7 uintptr, p8 uintptr) int32 {
+			cp1 := C.CString(p1)
+			defer C.free(unsafe.Pointer(cp1))
+			r := C.call_sqlite3_create_function_v2(C.uintptr_t(symbol), C.uintptr_t(p0), cp1, C.int(p2), C.int(p3), C.uintptr_t(p4), C.uintptr_t(p5), C.uintptr_t(p6), C.uintptr_t(p7), C.uintptr_t(p8))
+			return int32(r)
+		}
+	case "sqlite3_create_collation_v2":
+		a.CreateCollation = func(p0 uintptr, p1 string, p2 int32, p3 uintptr, p4 uintptr, p5 uintptr) int32 {
+			cp1 := C.CString(p1)
+			defer C.free(unsafe.Pointer(cp1))
+			r := C.call_sqlite3_create_collation_v2(C.uintptr_t(symbol), C.uintptr_t(p0), cp1, C.int(p2), C.uintptr_t(p3), C.uintptr_t(p4), C.uintptr_t(p5))
+			return int32(r)
+		}
+	case "sqlite3_user_data":
+		a.UserData = func(p0 uintptr) uintptr {
+			r := C.call_sqlite3_user_data(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return uintptr(r)
+		}
+	case "sqlite3_aggregate_context":
+		a.AggregateContext = func(p0 uintptr, p1 int32) *byte {
+			r := C.call_sqlite3_aggregate_context(C.uintptr_t(symbol), C.uintptr_t(p0), C.int(p1))
+			return (*byte)(unsafe.Pointer(r))
+		}
+	case "sqlite3_value_type":
+		a.ValueType = func(p0 uintptr) int32 {
+			r := C.call_sqlite3_value_type(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return int32(r)
+		}
+	case "sqlite3_value_int64":
+		a.ValueInt64 = func(p0 uintptr) int64 {
+			r := C.call_sqlite3_value_int64(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return int64(r)
+		}
+	case "sqlite3_value_double":
+		a.ValueDouble = func(p0 uintptr) float64 {
+			r := C.call_sqlite3_value_double(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return float64(r)
+		}
+	case "sqlite3_value_text":
+		a.ValueText = func(p0 uintptr) *byte {
+			r := C.call_sqlite3_value_text(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return (*byte)(unsafe.Pointer(r))
+		}
+	case "sqlite3_value_blob":
+		a.ValueBlob = func(p0 uintptr) *byte {
+			r := C.call_sqlite3_value_blob(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return (*byte)(unsafe.Pointer(r))
+		}
+	case "sqlite3_value_bytes":
+		a.ValueBytes = func(p0 uintptr) int32 {
+			r := C.call_sqlite3_value_bytes(C.uintptr_t(symbol), C.uintptr_t(p0))
+			return int32(r)
+		}
+	case "sqlite3_result_null":
+		a.ResultNull = func(p0 uintptr) {
+			C.call_sqlite3_result_null(C.uintptr_t(symbol), C.uintptr_t(p0))
+		}
+	case "sqlite3_result_int64":
+		a.ResultInt64 = func(p0 uintptr, p1 int64) {
+			C.call_sqlite3_result_int64(C.uintptr_t(symbol), C.uintptr_t(p0), C.sqlite3_int64(p1))
+		}
+	case "sqlite3_result_double":
+		a.ResultDouble = func(p0 uintptr, p1 float64) {
+			C.call_sqlite3_result_double(C.uintptr_t(symbol), C.uintptr_t(p0), C.double(p1))
+		}
+	case "sqlite3_result_text":
+		a.ResultText = func(p0 uintptr, p1 *byte, p2 int32, p3 uintptr) {
+			C.call_sqlite3_result_text(C.uintptr_t(symbol), C.uintptr_t(p0), unsafe.Pointer(p1), C.int(p2), C.uintptr_t(p3))
+		}
+	case "sqlite3_result_blob":
+		a.ResultBlob = func(p0 uintptr, p1 *byte, p2 int32, p3 uintptr) {
+			C.call_sqlite3_result_blob(C.uintptr_t(symbol), C.uintptr_t(p0), unsafe.Pointer(p1), C.int(p2), C.uintptr_t(p3))
+		}
+	case "sqlite3_result_error":
+		a.ResultError = func(p0 uintptr, p1 *byte, p2 int32) {
+			C.call_sqlite3_result_error(C.uintptr_t(symbol), C.uintptr_t(p0), unsafe.Pointer(p1), C.int(p2))
 		}
 	default:
 		panic("sqlite: missing CGO binding for " + name)

@@ -2,9 +2,11 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"io"
 	"math"
+	"reflect"
 	"strings"
 	"unsafe"
 
@@ -18,32 +20,87 @@ type rows struct {
 }
 
 func (r *rows) Columns() []string {
+	if r.s.c.inCallback.Load() != 0 {
+		return nil
+	}
 	r.s.c.mu.Lock()
 	defer r.s.c.mu.Unlock()
 	return append([]string(nil), r.s.columns...)
 }
 func (r *rows) ColumnTypeDatabaseTypeName(index int) string {
+	if r.s.c.inCallback.Load() != 0 {
+		return ""
+	}
 	r.s.c.mu.Lock()
 	defer r.s.c.mu.Unlock()
 	s := r.s
 	if r.closed || s.ptr == 0 || index < 0 || index >= len(s.columns) {
 		return ""
 	}
-	if s.decltypes == nil {
-		s.decltypes = make([]string, len(s.columns))
-		for i := range s.decltypes {
-			s.decltypes[i] = s.c.api.ColumnDecltype(s.ptr, int32(i))
-		}
+	s.loadDecltypes()
+	if s.c.cfg.mattnTypes {
+		return s.decltypes[index]
 	}
 	name := strings.ToUpper(s.decltypes[index])
 	name, _, _ = strings.Cut(name, "(")
 	return strings.TrimSpace(name)
 }
 
+func (s *stmt) loadDecltypes() {
+	if s.decltypes != nil {
+		return
+	}
+	s.decltypes = make([]string, len(s.columns))
+	for i := range s.decltypes {
+		s.decltypes[i] = s.c.api.ColumnDecltype(s.ptr, int32(i))
+	}
+}
+
+func (r *rows) ColumnTypeScanType(index int) reflect.Type {
+	if r.s.c.inCallback.Load() != 0 {
+		return reflect.TypeFor[any]()
+	}
+	c := r.s.c
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if r.closed || r.s.ptr == 0 || index < 0 || index >= len(r.s.columns) {
+		return reflect.TypeFor[any]()
+	}
+	r.s.loadDecltypes()
+	name := strings.ToUpper(r.s.decltypes[index])
+	switch {
+	case strings.Contains(name, "INT"):
+		return reflect.TypeFor[sql.NullInt64]()
+	case name == "TEXT" || name == "CLOB" || strings.Contains(name, "CHAR"):
+		return reflect.TypeFor[sql.NullString]()
+	case name == "BLOB":
+		return reflect.TypeFor[sql.RawBytes]()
+	case name == "REAL" || name == "FLOAT" || strings.Contains(name, "DOUBLE") || name == "NUMERIC" || strings.Contains(name, "DECIMAL"):
+		return reflect.TypeFor[sql.NullFloat64]()
+	case name == "BOOLEAN":
+		if c.cfg.parseBool {
+			return reflect.TypeFor[sql.NullBool]()
+		}
+		return reflect.TypeFor[sql.NullInt64]()
+	case isTimestamp(name):
+		if c.cfg.parseTime {
+			return reflect.TypeFor[sql.NullTime]()
+		}
+	}
+	return reflect.TypeFor[any]()
+}
+
 // SQLite allows NULL for most declarations and expression columns. Unknown
 // nullability is more accurate than inferring constraints from a type name.
 func (*rows) ColumnTypeNullable(int) (bool, bool) { return true, false }
-func (r *rows) Close() error                      { r.s.c.mu.Lock(); defer r.s.c.mu.Unlock(); return r.closeLocked() }
+func (r *rows) Close() error {
+	if r.s.c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
+	r.s.c.mu.Lock()
+	defer r.s.c.mu.Unlock()
+	return r.closeLocked()
+}
 func (r *rows) closeLocked() error {
 	if r.closed {
 		return nil
@@ -64,6 +121,9 @@ func (r *rows) closeLocked() error {
 	return s.c.sqliteError(rc)
 }
 func (r *rows) Next(dest []driver.Value) error {
+	if r.s.c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
 	c := r.s.c
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -131,7 +191,7 @@ func (r *rows) Next(dest []driver.Value) error {
 					dest[i] = nil
 				}
 			}
-			return nil
+			return r.convertValues(dest)
 		}
 		for i := range dest {
 			col := int32(i)
@@ -160,7 +220,7 @@ func (r *rows) Next(dest []driver.Value) error {
 				dest[i] = nil
 			}
 		}
-		return nil
+		return r.convertValues(dest)
 	})
 	if err != nil {
 		_ = r.closeLocked()

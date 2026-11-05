@@ -11,6 +11,7 @@ var (
 	ErrMultipleStatements = errors.New("sqlite: multiple statements require an Exec call without parameters")
 	ErrExtensionDisabled  = errors.New("sqlite: extension loading requires WithExtensions")
 	ErrUnsupported        = errors.New("sqlite: unsupported capability")
+	ErrCallbackReentry    = errors.New("sqlite: callbacks must not reenter their physical connection")
 )
 
 // Error preserves SQLite's primary and extended result codes.
