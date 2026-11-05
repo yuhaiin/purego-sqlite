@@ -5,7 +5,7 @@ go 1.26.0
 replace github.com/yuhaiin/purego-sqlite => ..
 
 require (
-	github.com/mattn/go-sqlite3 v1.14.52
+	github.com/mattn/go-sqlite3 v1.14.53
 	github.com/yuhaiin/purego-sqlite v0.0.0-00010101000000-000000000000
 	modernc.org/sqlite v1.61.1
 )
