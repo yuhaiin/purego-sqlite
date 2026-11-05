@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/yuhaiin/purego-sqlite/internal/ffi"
@@ -27,6 +28,8 @@ type Conn struct {
 	execFrame   []uint64
 	active      *rows
 	tx          *transaction
+	inCallback  atomic.Int32
+	callbackErr error
 }
 
 func (c *Conn) sqliteError(rc int32) error {
@@ -49,7 +52,13 @@ func (c *Conn) sqliteError(rc int32) error {
 
 // runLocked must hold mu throughout, including stopping/joining AfterFunc.
 // The callback never needs mu, so it can interrupt a blocked sqlite3_step.
-func (c *Conn) runLocked(ctx context.Context, fn func() error) error {
+func (c *Conn) runLocked(ctx context.Context, fn func() error) (err error) {
+	defer func() {
+		if c.callbackErr != nil {
+			err = errors.Join(err, c.callbackErr)
+			c.callbackErr = nil
+		}
+	}()
 	if c.db == 0 {
 		return ErrClosed
 	}
@@ -76,7 +85,7 @@ func (c *Conn) runLocked(ctx context.Context, fn func() error) error {
 			}
 		}
 	})
-	err := fn()
+	err = fn()
 	close(finished)
 	if !stop() {
 		<-done
@@ -97,6 +106,9 @@ func (c *Conn) available() error {
 }
 
 func (c *Conn) Close() error {
+	if c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.db == 0 {
@@ -127,6 +139,9 @@ func (c *Conn) Prepare(query string) (driver.Stmt, error) {
 	return c.PrepareContext(context.Background(), query)
 }
 func (c *Conn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
+	if c.inCallback.Load() != 0 {
+		return nil, ErrCallbackReentry
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if err := c.available(); err != nil {
@@ -143,6 +158,9 @@ func (c *Conn) PrepareContext(ctx context.Context, query string) (driver.Stmt, e
 	return s, nil
 }
 func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if c.inCallback.Load() != 0 {
+		return nil, ErrCallbackReentry
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if err := c.available(); err != nil {
@@ -194,6 +212,9 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 	return result, err
 }
 func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	if c.inCallback.Load() != 0 {
+		return nil, ErrCallbackReentry
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if err := c.available(); err != nil {
@@ -219,6 +240,9 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 	return r, nil
 }
 func (c *Conn) Ping(ctx context.Context) error {
+	if c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if err := c.available(); err != nil {
@@ -227,11 +251,17 @@ func (c *Conn) Ping(ctx context.Context) error {
 	return c.runLocked(ctx, func() error { return nil })
 }
 func (c *Conn) IsValid() bool {
+	if c.inCallback.Load() != 0 {
+		return false
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.db != 0 && c.active == nil && c.tx == nil && c.api.Autocommit(c.db) != 0
 }
 func (c *Conn) ResetSession(ctx context.Context) error {
+	if c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if err := ctx.Err(); err != nil {
@@ -244,6 +274,9 @@ func (c *Conn) ResetSession(ctx context.Context) error {
 }
 func (c *Conn) Begin() (driver.Tx, error) { return c.BeginTx(context.Background(), driver.TxOptions{}) }
 func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+	if c.inCallback.Load() != 0 {
+		return nil, ErrCallbackReentry
+	}
 	// Isolation levels other than Default are not silently mapped to SQLite locks.
 	if opts.Isolation != 0 {
 		return nil, fmt.Errorf("%w: transaction isolation %d", ErrUnsupported, opts.Isolation)

@@ -27,9 +27,15 @@ func bindFast(a *API, h uintptr) {
 		"sqlite3_bind_int64", "sqlite3_column_int64", "sqlite3_last_insert_rowid", "sqlite3_changes64",
 		"sqlite3_prepare_v3",
 		"sqlite3_column_name", "sqlite3_column_decltype", "sqlite3_bind_parameter_name",
+		"sqlite3_user_data", "sqlite3_aggregate_context", "sqlite3_value_type", "sqlite3_value_int64",
+		"sqlite3_value_text", "sqlite3_value_blob", "sqlite3_value_bytes", "sqlite3_result_null", "sqlite3_result_int64",
 	} {
 		symbols[name], _ = loader.Symbol(h, name)
 	}
+	// Context callbacks identify their registration before a connection is known.
+	// This immutable binding has no reusable frame and is safe across connections.
+	userData := symbols["sqlite3_user_data"]
+	a.UserData = func(ctx uintptr) uintptr { result, _, _ := purego.SyscallN(userData, ctx); return result }
 	a.connection = func() *API {
 		local := *a
 		local.connection = nil
@@ -40,6 +46,7 @@ func bindFast(a *API, h uintptr) {
 }
 
 func bindConnectionCalls(a *API, symbols map[string]uintptr) {
+	bindCallbackCalls(a, symbols)
 	// Conn.mu serializes these calls. Reusing scalar-only argument storage
 	// avoids SyscallN's escaping variadic slice without another lock or pool.
 	// Go buffer addresses never enter this frame. Interrupt uses a separate
@@ -134,6 +141,28 @@ func bindConnectionCalls(a *API, symbols map[string]uintptr) {
 	if p := symbol("sqlite3_changes64"); p != 0 {
 		a.Changes64 = func(db uintptr) int64 { return int64(callInts(p, 1, db, 0, 0)) }
 	}
+}
+
+// A callback runs inside Step/Prepare, so it must not reuse their active argument
+// frame. Value/result calls use a separate connection-owned scalar frame. They
+// cannot invoke user callbacks themselves; same-connection reentry is rejected.
+func bindCallbackCalls(a *API, symbols map[string]uintptr) {
+	var args [2]uintptr
+	call := func(name string, count int, x, y uintptr) uintptr {
+		args[0], args[1] = x, y
+		result, _, _ := purego.SyscallN(symbols[name], args[:count]...)
+		return result
+	}
+	a.ValueType = func(value uintptr) int32 { return int32(call("sqlite3_value_type", 1, value, 0)) }
+	a.ValueBytes = func(value uintptr) int32 { return int32(call("sqlite3_value_bytes", 1, value, 0)) }
+	a.ValueInt64 = func(value uintptr) int64 { return int64(call("sqlite3_value_int64", 1, value, 0)) }
+	a.ValueText = func(value uintptr) *byte { return NativePointer(call("sqlite3_value_text", 1, value, 0)) }
+	a.ValueBlob = func(value uintptr) *byte { return NativePointer(call("sqlite3_value_blob", 1, value, 0)) }
+	a.AggregateContext = func(ctx uintptr, size int32) *byte {
+		return NativePointer(call("sqlite3_aggregate_context", 2, ctx, uintptr(size)))
+	}
+	a.ResultNull = func(ctx uintptr) { call("sqlite3_result_null", 1, ctx, 0) }
+	a.ResultInt64 = func(ctx uintptr, value int64) { call("sqlite3_result_int64", 2, ctx, uintptr(value)) }
 }
 
 // Metadata is native NUL-terminated text owned by the statement. Return a copy

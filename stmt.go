@@ -8,6 +8,7 @@ import (
 	"math"
 	"runtime"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/yuhaiin/purego-sqlite/internal/ffi"
@@ -132,7 +133,14 @@ func (s *stmt) refreshColumns() {
 	}
 }
 func (s *stmt) NumInput() int { return -1 } // bindLocked validates names and positional counts.
-func (s *stmt) Close() error  { s.c.mu.Lock(); defer s.c.mu.Unlock(); return s.closeLocked() }
+func (s *stmt) Close() error {
+	if s.c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
+	s.c.mu.Lock()
+	defer s.c.mu.Unlock()
+	return s.closeLocked()
+}
 func (s *stmt) closeLocked() error {
 	if s.ptr == 0 {
 		return nil
@@ -160,6 +168,9 @@ func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
 	return s.QueryContext(context.Background(), values(args))
 }
 func (s *stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if s.c.inCallback.Load() != 0 {
+		return nil, ErrCallbackReentry
+	}
 	c := s.c
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -174,6 +185,9 @@ func (s *stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (drive
 	return result, err
 }
 func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	if s.c.inCallback.Load() != 0 {
+		return nil, ErrCallbackReentry
+	}
 	c := s.c
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -278,6 +292,12 @@ func (s *stmt) bindValue(index int32, value any) error {
 		} // NULL must remain distinct from empty TEXT.
 		rc = a.BindText(s.ptr, index, p, int32(len(v)), ffi.Transient)
 		runtime.KeepAlive(v)
+	case time.Time:
+		s.boundBuffers = true
+		var buffer [64]byte
+		data := v.AppendFormat(buffer[:0], timestampFormats[0])
+		rc = a.BindText(s.ptr, index, &data[0], int32(len(data)), ffi.Transient)
+		runtime.KeepAlive(data)
 	case []byte:
 		if v == nil {
 			rc = a.BindNull(s.ptr, index)

@@ -20,6 +20,7 @@ const (
 )
 
 type API struct {
+	handle         uintptr
 	connection     func() *API
 	rowReader      func() func(uintptr, []RowValue) int32
 	scalarExecutor func() func(uintptr, []uint64) int32
@@ -84,10 +85,26 @@ type API struct {
 	EnableLoadExtension func(uintptr, int32) int32                                  `sqlite:"sqlite3_enable_load_extension,optional"`
 	LoadExtension       func(uintptr, string, string, **byte) int32                 `sqlite:"sqlite3_load_extension,optional"`
 	// ConfigExtension is a platform-specialized call, never a general variadic binding.
-	ConfigExtension func(uintptr, int32) int32
-	BackupInit      func(uintptr, string, uintptr, string) uintptr `sqlite:"sqlite3_backup_init"`
-	BackupStep      func(uintptr, int32) int32                     `sqlite:"sqlite3_backup_step"`
-	BackupFinish    func(uintptr) int32                            `sqlite:"sqlite3_backup_finish"`
+	ConfigExtension  func(uintptr, int32) int32
+	BackupInit       func(uintptr, string, uintptr, string) uintptr                                         `sqlite:"sqlite3_backup_init"`
+	BackupStep       func(uintptr, int32) int32                                                             `sqlite:"sqlite3_backup_step"`
+	BackupFinish     func(uintptr) int32                                                                    `sqlite:"sqlite3_backup_finish"`
+	CreateFunction   func(uintptr, string, int32, int32, uintptr, uintptr, uintptr, uintptr, uintptr) int32 `sqlite:"sqlite3_create_function_v2"`
+	CreateCollation  func(uintptr, string, int32, uintptr, uintptr, uintptr) int32                          `sqlite:"sqlite3_create_collation_v2"`
+	UserData         func(uintptr) uintptr                                                                  `sqlite:"sqlite3_user_data"`
+	AggregateContext func(uintptr, int32) *byte                                                             `sqlite:"sqlite3_aggregate_context"`
+	ValueType        func(uintptr) int32                                                                    `sqlite:"sqlite3_value_type"`
+	ValueInt64       func(uintptr) int64                                                                    `sqlite:"sqlite3_value_int64"`
+	ValueDouble      func(uintptr) float64                                                                  `sqlite:"sqlite3_value_double"`
+	ValueText        func(uintptr) *byte                                                                    `sqlite:"sqlite3_value_text"`
+	ValueBlob        func(uintptr) *byte                                                                    `sqlite:"sqlite3_value_blob"`
+	ValueBytes       func(uintptr) int32                                                                    `sqlite:"sqlite3_value_bytes"`
+	ResultNull       func(uintptr)                                                                          `sqlite:"sqlite3_result_null"`
+	ResultInt64      func(uintptr, int64)                                                                   `sqlite:"sqlite3_result_int64"`
+	ResultDouble     func(uintptr, float64)                                                                 `sqlite:"sqlite3_result_double"`
+	ResultText       func(uintptr, *byte, int32, uintptr)                                                   `sqlite:"sqlite3_result_text"`
+	ResultBlob       func(uintptr, *byte, int32, uintptr)                                                   `sqlite:"sqlite3_result_blob"`
+	ResultError      func(uintptr, *byte, int32)                                                            `sqlite:"sqlite3_result_error"`
 }
 
 var libraries = struct {
@@ -105,7 +122,7 @@ func Load(path string) (*API, error) {
 	if err != nil {
 		return nil, err
 	}
-	a := &API{Path: actual}
+	a := &API{Path: actual, handle: h}
 	if err = bind(a, h); err != nil {
 		_ = loader.Close(h)
 		return nil, err

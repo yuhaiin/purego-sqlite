@@ -119,8 +119,8 @@ func TestNullEmptyAndRebinding(t *testing.T) {
 	if err := db.QueryRow("SELECT ?", "a\x00b").Scan(&got); err != nil || got != "a\x00b" {
 		t.Fatalf("NUL: %q %v", got, err)
 	}
-	if _, err := db.Exec("SELECT ?", time.Now()); err == nil {
-		t.Fatal("time must be explicitly encoded")
+	if _, err := db.Exec("SELECT ?", time.Now()); err != nil {
+		t.Fatal("time binding:", err)
 	}
 }
 

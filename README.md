@@ -163,10 +163,15 @@ defer db.Close()
 ```
 
 Import the package as `sqlite "github.com/yuhaiin/purego-sqlite"` for typed APIs.
-Additional options are `WithReadOnly`, `WithExtensions` and `WithInit`.
+Additional options are `WithReadOnly`, `WithExtensions`, `WithInit`,
+`WithMattnTypes`, `WithTimeLocation` and `WithBooleanConversion`.
 `WithWAL` checks SQLite's returned journal mode and fails if WAL is unavailable
 (for example, an in-memory database). SQLite URI filenames and their native
-parameters are accepted; there is no driver-specific DSN PRAGMA interpolation.
+parameters are accepted. Common mattn DSN parameters such as `_foreign_keys`,
+`_busy_timeout`, `_journal_mode`, `_synchronous` and `_txlock` are validated and
+applied to every physical connection. Explicit Options override DSN defaults.
+See [mattn compatibility and Go extensions](docs/mattn-compatibility.md) for
+supported aliases, type conversion, callback APIs and intentional differences.
 
 ## Transactions, SQL and values
 
@@ -203,10 +208,13 @@ copies Go data before returning. Result TEXT/BLOB data is copied before native
 buffers can expire. Embedded NUL in bound TEXT is preserved; SQLite's SQL text
 functions themselves may have NUL-specific semantics.
 
-Dates are not inferred: encode `time.Time` explicitly as a chosen TEXT format or
-INTEGER epoch. INTEGER/BOOLEAN columns return `int64`; REAL returns `float64`;
+`time.Time` parameters are encoded as timestamp TEXT with their UTC offset.
+By default dates are not inferred on reads: INTEGER/BOOLEAN columns return `int64`; REAL returns `float64`;
 TEXT returns `string`; BLOB returns `[]byte`. Declared type metadata is exposed;
-nullability is reported as unknown. Structured `*sqlite.Error` includes `Code`,
+nullability is reported as unknown. `WithMattnTypes` opts into declared
+DATE/DATETIME/TIMESTAMP and BOOLEAN decoding; `_loc` / `WithTimeLocation` select
+the decoded time location. `ColumnTypes().ScanType()` reflects the selected mode.
+Structured `*sqlite.Error` includes `Code`,
 `ExtendedCode` and `Message`; use `errors.AsType[*sqlite.Error]` or
 `errors.Is(err, sqlite.ErrBusy/ErrLocked/ErrConstraint/ErrReadOnly)`.
 
@@ -227,7 +235,8 @@ operation starts. No watcher goroutine is created for background contexts, and
 no canceled watcher survives its operation. Native busy-handler sleeps and native
 extensions can delay cancellation; the configured busy timeout bounds ordinary
 lock waits, and extensions must cooperate with SQLite interruption. The default
-busy timeout is 5 seconds. The driver does not install Go callbacks in SQLite.
+busy timeout is 5 seconds. Go callbacks are installed only when explicitly
+registered with the function, aggregate or collation APIs.
 
 `WithInit(func(context.Context, *sqlite.Conn) error)` runs on **each new physical
 connection** before pooling. Use it for per-connection PRAGMAs and extensions.
@@ -260,7 +269,8 @@ Unknown feature names return `ErrUnsupported`.
 | RTree / Geopoly / DBSTAT / math | Corresponding compile options | Yes; runtime probe |
 | Window functions / UPSERT / generated columns / RETURNING / STRICT | SQLite 3.25 / 3.24 / 3.31 / 3.35 / 3.37+ respectively | Native SQL |
 | Trusted extension loading | Load-extension symbols and supported secure ABI | Opt-in; Apple arm64 requires the CGO backend |
-| Custom Go SQL functions, collations, hooks, FTS5 tokenizers | Audited native-to-Go callback lifetimes and ABIs | Not implemented |
+| Custom Go SQL scalar functions, aggregates, collations | Public SQLite callback APIs | `Conn.RegisterFunc`, `RegisterAggregator`, `RegisterCollation` |
+| Hooks, authorizer, trace, Go FTS5 tokenizers | Additional native callback APIs | Not implemented |
 | Session/changesets, incremental BLOB I/O, serialization | Additional native APIs | Not implemented |
 
 The optional bundled build enables FTS5, RTree, DBSTAT, math and native JSON/JSONB.
@@ -309,8 +319,11 @@ passes unnamed arguments differently; `WithExtensions` returns `ErrUnsupported`
 on the CGO-disabled PureGo backend.
 The default CGO backend uses a C variadic trampoline and supports this
 operation on Apple arm64 as well. Native extensions can
-register functions/tokenizers; Go callback APIs remain deferred pending separate
-ABI, panic, reentrancy, foreign-thread and callback-lifetime validation.
+register functions/tokenizers. Go scalar functions, aggregates and collations
+can instead be registered on each physical connection through `WithInit`.
+Callbacks must not reenter that connection or its `database/sql` pool; direct
+driver reentry returns `ErrCallbackReentry`. See the compatibility guide for
+panic/error handling, security flags and callback ownership.
 
 ## Online backup
 
@@ -498,13 +511,13 @@ features, platform loaders, optional asset builds and comprehensive benchmarks
 are implemented. Platform CI results are available on the pull request; compiling
 a cross-target binary alone does not validate its runtime ABI.
 
-Go callbacks, custom Go FTS5 tokenizers, hook APIs, session/changesets,
+Custom Go FTS5 tokenizers, hook APIs, session/changesets,
 serialization and incremental BLOB APIs remain future work. Secure runtime
 extensions are unavailable on Apple arm64's CGO-disabled PureGo backend; use
 CGO when needed. Embedded assets require a separate
 native build step and process-lifetime temp cleanup as described above. Busy
 waits and extension work may delay cancellation. There is no statement cache,
-no multiple result sets, no parameterized scripts, no automatic date conversion and no
+no multiple result sets, no parameterized scripts and no
 bundled third-party extension such as sqlite-vec. Validate workload correctness,
 performance and deployed native-library provenance before production adoption.
 

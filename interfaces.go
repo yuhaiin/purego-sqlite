@@ -20,6 +20,7 @@ var (
 	_ driver.Rows                           = (*rows)(nil)
 	_ driver.RowsColumnTypeDatabaseTypeName = (*rows)(nil)
 	_ driver.RowsColumnTypeNullable         = (*rows)(nil)
+	_ driver.RowsColumnTypeScanType         = (*rows)(nil)
 	_ driver.Tx                             = (*transaction)(nil)
 	_ driver.Result                         = result{}
 )

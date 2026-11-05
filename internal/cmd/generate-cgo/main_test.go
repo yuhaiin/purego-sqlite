@@ -22,7 +22,7 @@ func TestGeneratedTrampolinesMatchCommittedABI(t *testing.T) {
 	if err := generate(root); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"internal/ffi/register_cgo.go", "internal/sqlite3/symbols.h"} {
+	for _, name := range []string{"internal/ffi/register_cgo.go", "internal/sqlite3/symbols.h", "internal/ffi/callback_slots.h"} {
 		got, err := os.ReadFile(filepath.Join(root, name))
 		if err != nil {
 			t.Fatal(err)

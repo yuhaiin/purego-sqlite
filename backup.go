@@ -13,6 +13,9 @@ import (
 // Other source connections may continue to run; this physical connection is
 // reserved until completion. Busy/locked destinations return an SQLite error.
 func (c *Conn) BackupTo(ctx context.Context, filename string) error {
+	if c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
 	if filename == "" || strings.ContainsRune(filename, 0) {
 		return errors.New("sqlite: backup destination must be a nonempty filename without NUL")
 	}

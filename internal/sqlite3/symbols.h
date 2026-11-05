@@ -52,6 +52,22 @@ static uintptr_t linked_symbol(const char *name) {
  if (!strcmp(name, "sqlite3_backup_init")) return (uintptr_t)&sqlite3_backup_init;
  if (!strcmp(name, "sqlite3_backup_step")) return (uintptr_t)&sqlite3_backup_step;
  if (!strcmp(name, "sqlite3_backup_finish")) return (uintptr_t)&sqlite3_backup_finish;
+ if (!strcmp(name, "sqlite3_create_function_v2")) return (uintptr_t)&sqlite3_create_function_v2;
+ if (!strcmp(name, "sqlite3_create_collation_v2")) return (uintptr_t)&sqlite3_create_collation_v2;
+ if (!strcmp(name, "sqlite3_user_data")) return (uintptr_t)&sqlite3_user_data;
+ if (!strcmp(name, "sqlite3_aggregate_context")) return (uintptr_t)&sqlite3_aggregate_context;
+ if (!strcmp(name, "sqlite3_value_type")) return (uintptr_t)&sqlite3_value_type;
+ if (!strcmp(name, "sqlite3_value_int64")) return (uintptr_t)&sqlite3_value_int64;
+ if (!strcmp(name, "sqlite3_value_double")) return (uintptr_t)&sqlite3_value_double;
+ if (!strcmp(name, "sqlite3_value_text")) return (uintptr_t)&sqlite3_value_text;
+ if (!strcmp(name, "sqlite3_value_blob")) return (uintptr_t)&sqlite3_value_blob;
+ if (!strcmp(name, "sqlite3_value_bytes")) return (uintptr_t)&sqlite3_value_bytes;
+ if (!strcmp(name, "sqlite3_result_null")) return (uintptr_t)&sqlite3_result_null;
+ if (!strcmp(name, "sqlite3_result_int64")) return (uintptr_t)&sqlite3_result_int64;
+ if (!strcmp(name, "sqlite3_result_double")) return (uintptr_t)&sqlite3_result_double;
+ if (!strcmp(name, "sqlite3_result_text")) return (uintptr_t)&sqlite3_result_text;
+ if (!strcmp(name, "sqlite3_result_blob")) return (uintptr_t)&sqlite3_result_blob;
+ if (!strcmp(name, "sqlite3_result_error")) return (uintptr_t)&sqlite3_result_error;
  if (!strcmp(name, "sqlite3_db_config")) return (uintptr_t)&sqlite3_db_config;
  return 0;
 }

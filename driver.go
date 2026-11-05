@@ -40,6 +40,11 @@ func NewConnector(dsn string, options ...Option) (*Connector, error) {
 		return nil, errors.New("sqlite: filename contains NUL")
 	}
 	cfg := config{busyMS: 5000, txMode: "DEFERRED"}
+	var err error
+	dsn, err = parseDSN(dsn, &cfg)
+	if err != nil {
+		return nil, err
+	}
 	for _, option := range options {
 		if option == nil {
 			return nil, errors.New("sqlite: nil option")
@@ -114,6 +119,16 @@ func (c *Connector) Connect(ctx context.Context) (driver.Conn, error) {
 		}
 		if values[0] != "wal" {
 			return fail(errors.New("sqlite: WAL unavailable for this database"))
+		}
+	}
+	if c.cfg.journal != "" && !c.cfg.wal {
+		if _, err := conn.ExecContext(ctx, "PRAGMA journal_mode="+c.cfg.journal, nil); err != nil {
+			return fail(err)
+		}
+	}
+	for _, pragma := range c.cfg.pragmas {
+		if _, err := conn.ExecContext(ctx, pragma, nil); err != nil {
+			return fail(err)
 		}
 	}
 	if c.cfg.init != nil {

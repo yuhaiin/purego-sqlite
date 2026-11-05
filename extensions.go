@@ -13,6 +13,9 @@ import (
 // connection. Call inside WithInit for every pooled connection, or sql.Conn.Raw.
 // Loading arbitrary native code grants it the privileges of this process.
 func (c *Conn) LoadExtension(ctx context.Context, path, entry string) error {
+	if c.inCallback.Load() != 0 {
+		return ErrCallbackReentry
+	}
 	if !filepath.IsAbs(path) || strings.ContainsRune(path, 0) || strings.ContainsRune(entry, 0) {
 		return errors.New("sqlite: extension path must be absolute and path/entry contain no NUL")
 	}
